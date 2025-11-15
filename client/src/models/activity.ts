@@ -1,0 +1,31 @@
+interface User {
+  displayName: string
+  image: string
+}
+
+interface Attendee extends User {
+  username: string
+}
+
+export interface Activity {
+  id: string
+  title: string
+  date: Date
+  venue: string
+  host: User
+  hostEmail: string
+  description: string
+  category: string
+  city: string
+  isCancelled: boolean
+  isHost: boolean
+  isGoing: boolean
+  attendees: Attendee[]
+}
+
+export interface ActivityFormValues {
+  id?: string
+  title: string
+  date: string | null
+  description: string
+}
