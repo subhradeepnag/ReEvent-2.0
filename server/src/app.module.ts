@@ -13,7 +13,7 @@ import { ActivityAttendee } from './modules/v1/activities/entities/activity-atte
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: `.env.${process.env.NODE_ENV || 'local'}`,
     }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
@@ -29,7 +29,7 @@ import { ActivityAttendee } from './modules/v1/activities/entities/activity-atte
           password: dbConfig.password,
           database: dbConfig.database,
           models: [Activity, User, ActivityAttendee],
-          autoLoadModels: false,
+          autoLoadModels: true,
           synchronize: true,
         }
       },
