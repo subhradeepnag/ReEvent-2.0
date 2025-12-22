@@ -92,7 +92,10 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
             <strong>City:</strong> {activity.city}
           </Typography>
           <Typography variant="body1" color="textSecondary">
-            <strong>Host:</strong> {activity.hostEmail}
+            <strong>Host Name:</strong> {activity.hostName}
+          </Typography>
+          <Typography variant="body1" color="textSecondary">
+            <strong>Host Email:</strong> {activity.hostEmail}
           </Typography>
           <Typography variant="body2" color="textPrimary" sx={{ mt: 2 }}>
             {activity.description}

@@ -14,6 +14,7 @@ export interface Activity {
   venue: string
   host: User
   hostEmail: string
+  hostName: string
   description: string
   category: string
   city: string

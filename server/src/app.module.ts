@@ -4,10 +4,7 @@ import { CommonModule } from './common'
 import { V1Module } from './modules/v1'
 import * as connectionString from 'pg-connection-string'
 import { SequelizeModule } from '@nestjs/sequelize'
-import { Activity } from './modules/v1/activities/entities'
 import { AuthModule } from './auth'
-import { User } from './modules/v1/accounts/entities'
-import { ActivityAttendee } from './modules/v1/activities/entities/activity-attendee.entity'
 
 @Module({
   imports: [
@@ -28,7 +25,6 @@ import { ActivityAttendee } from './modules/v1/activities/entities/activity-atte
           username: dbConfig.user,
           password: dbConfig.password,
           database: dbConfig.database,
-          models: [Activity, User, ActivityAttendee],
           autoLoadModels: true,
           synchronize: true,
         }

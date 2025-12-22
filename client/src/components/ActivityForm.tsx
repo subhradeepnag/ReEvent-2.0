@@ -80,7 +80,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
           try {
             switch (action) {
               case 'create':
-                await ActivitiesService.create(values, profile.email)
+                await ActivitiesService.create(values, profile.email, profile.name)
                 break
               case 'edit':
                 await ActivitiesService.update(values, id)

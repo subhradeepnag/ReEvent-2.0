@@ -29,6 +29,9 @@ export class Activity extends Model {
   @Column(DataType.STRING)
   hostEmail: string
 
+  @Column(DataType.STRING)
+  hostName: string
+
   @Column(DataType.BOOLEAN)
   isCancelled: boolean
 

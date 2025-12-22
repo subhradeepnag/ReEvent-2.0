@@ -60,7 +60,7 @@ export default function ActivityList({ activities }: Props) {
                 <Box display="flex" alignItems="center" gap={1}>
                   <Avatar src={activity?.host?.image} alt={activity?.host?.displayName} sx={{ width: 30, height: 30 }} />
                   <Typography variant="body2" color="text.secondary">
-                    Host: {activity?.hostEmail}
+                    Host: {activity?.hostName}
                   </Typography>
                 </Box>
               </CardContent>

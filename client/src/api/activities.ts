@@ -8,10 +8,10 @@ export const ActivitiesService = {
   get: async (id: string, token?: string): Promise<Activity> => {
     return fetchClient(`api/v1/activities/${id}`, { token })
   },
-  create: async (activity: ActivityFormValues, hostEmail: string, token?: string): Promise<void> => {
+  create: async (activity: ActivityFormValues, hostEmail: string, hostName: string, token?: string): Promise<void> => {
     return fetchClient('api/v1/activities', {
       method: 'POST',
-      body: { ...activity, hostEmail },
+      body: { ...activity, hostEmail, hostName },
       token,
     })
   },
