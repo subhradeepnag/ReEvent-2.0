@@ -12,6 +12,7 @@ export interface Activity {
   title: string
   date: Date
   venue: string
+  imageUrl: string
   host: User
   hostEmail: string
   hostName: string

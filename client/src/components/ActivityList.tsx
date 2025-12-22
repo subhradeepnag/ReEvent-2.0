@@ -47,7 +47,7 @@ export default function ActivityList({ activities }: Props) {
                 },
               }}
             >
-              <CardMedia component="img" height="240" image={activity?.host?.image || 'https://picsum.photos/800/600'} alt={activity.title} />
+              <CardMedia component="img" height="240" image={activity.imageUrl || 'https://picsum.photos/800/600'} alt={activity.title} />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
                   {activity.title}

@@ -27,6 +27,9 @@ export class Activity extends Model {
   venue: string
 
   @Column(DataType.STRING)
+  imageUrl: string
+
+  @Column(DataType.STRING)
   hostEmail: string
 
   @Column(DataType.STRING)

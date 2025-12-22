@@ -30,6 +30,7 @@ const validationSchema = Yup.object({
   date: Yup.date().required('Date is required').nullable(),
   city: Yup.string().required('City is required'),
   venue: Yup.string().required('Venue is required'),
+  imageUrl: Yup.string().url('Must be a valid URL').required('Image is required'),
 })
 
 const FormikTextField = ({ name, ...props }: FormikTextFieldProps) => {
@@ -73,6 +74,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
           date: '',
           city: '',
           venue: '',
+          imageUrl: '',
         }}
         validationSchema={validationSchema}
         onSubmit={async (values, { setSubmitting }) => {
@@ -102,6 +104,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
             <FormikTextField name="date" label="Date" variant="outlined" margin="normal" fullWidth type="date" InputLabelProps={{ shrink: true }} />
             <FormikTextField name="city" label="City" variant="outlined" margin="normal" fullWidth />
             <FormikTextField name="venue" label="Venue" variant="outlined" margin="normal" fullWidth />
+            <FormikTextField name="imageUrl" label="Activity Image URL" variant="outlined" margin="normal" fullWidth />
             <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }} disabled={isSubmitting}>
               Submit
             </Button>
