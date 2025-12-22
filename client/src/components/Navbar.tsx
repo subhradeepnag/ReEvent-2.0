@@ -50,11 +50,9 @@ const Navbar = () => {
         <Box sx={{ flexGrow: 1 }}>
           {isLoggedIn &&
             pages.map((page) => (
-              <Link key={page.name} href={page.path} passHref legacyBehavior>
-                <Button component="a" variant="contained" color={page.color} sx={{ mx: 1 }}>
-                  {page.name}
-                </Button>
-              </Link>
+              <Button key={page.name} component={Link} href={page.path} variant="contained" color={page.color} sx={{ mx: 1 }}>
+                {page.name}
+              </Button>
             ))}
         </Box>
 
