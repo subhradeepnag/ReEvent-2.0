@@ -9,17 +9,20 @@ import { useRouter } from 'next/navigation'
 
 const pages = [
   { name: 'Activities', path: '/activities', color: 'secondary' as const },
-  {
-    name: 'Create Activity',
-    path: '/createActivity',
-    color: 'success' as const,
-  },
+  { name: 'Create Activity', path: '/createActivity', color: 'success' as const },
 ]
 
 const Navbar = () => {
+  const [mounted, setMounted] = React.useState(false)
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn)
   const dispatch = useAppDispatch()
   const router = useRouter()
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
 
   function handleLogout() {
     dispatch(logout())
@@ -32,7 +35,6 @@ const Navbar = () => {
       <Toolbar>
         <Typography
           variant="h6"
-          noWrap
           component={Link}
           href="/"
           sx={{
@@ -50,7 +52,7 @@ const Navbar = () => {
         <Box sx={{ flexGrow: 1 }}>
           {isLoggedIn &&
             pages.map((page) => (
-              <Button key={page.name} component={Link} href={page.path} variant="contained" color={page.color} sx={{ mx: 1 }}>
+              <Button key={page.name} LinkComponent={Link} href={page.path} variant="contained" color={page.color} sx={{ mx: 1 }}>
                 {page.name}
               </Button>
             ))}
@@ -59,20 +61,18 @@ const Navbar = () => {
         <Box>
           {!isLoggedIn ? (
             <>
-              <Button component={Link} href="/login" variant="outlined" color="inherit" sx={{ mx: 1 }}>
+              <Button LinkComponent={Link} href="/login" variant="outlined" sx={{ mx: 1 }}>
                 Login
               </Button>
-              <Button component={Link} href="/signup" variant="contained" color="primary" sx={{ mx: 1 }}>
+              <Button LinkComponent={Link} href="/signup" variant="contained" sx={{ mx: 1 }}>
                 Signup
               </Button>
             </>
           ) : (
             <>
-              {/* New Profile Button */}
-              <Button component={Link} href="/profile" variant="contained" color="info" sx={{ mx: 1 }}>
+              <Button LinkComponent={Link} href="/profile" variant="contained" color="info" sx={{ mx: 1 }}>
                 Profile
               </Button>
-
               <Button onClick={handleLogout} variant="outlined" color="inherit" sx={{ mx: 1 }}>
                 Logout
               </Button>
