@@ -29,6 +29,14 @@ export default function Home() {
           Discover, join, and create exciting activities around you! Stay connected, expand your network, and never miss out on the fun.
         </Typography>
 
+        {isLoggedIn && (
+          <Stack direction="row" spacing={2} mt={4}>
+            <Button LinkComponent={Link} href="/activities" variant="contained" color="secondary" size="large">
+              Go To Activities
+            </Button>
+          </Stack>
+        )}
+
         {!isLoggedIn && (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={4}>
             <Button component={Link} href="/login" variant="contained" color="primary" size="large">
