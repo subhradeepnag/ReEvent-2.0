@@ -1,13 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Formik, Form, useField } from 'formik'
 import { TextField, Button, Box, Typography, TextFieldProps } from '@mui/material'
-import * as Yup from 'yup'
 import { useRouter } from 'next/navigation'
 import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
+import * as Yup from 'yup'
 
 type FormikTextFieldProps = TextFieldProps & {
   name: string
@@ -42,13 +42,60 @@ const FormikTextField = ({ name, ...props }: FormikTextFieldProps) => {
 
 const ActivityForm = ({ action, id }: ActivityFormProps) => {
   const router = useRouter()
+  const [initialValues, setInitialValues] = useState({
+    title: '',
+    description: '',
+    category: '',
+    date: '',
+    city: '',
+    venue: '',
+    imageUrl: '',
+  })
+
+  const [loading, setLoading] = useState(action === 'edit')
+
   const profile = useSelector((state: RootState) => state.profile.profile)
+
+  useEffect(() => {
+    if (action === 'edit' && id) {
+      const fetchActivity = async () => {
+        try {
+          const activity = await ActivitiesService.get(id)
+
+          setInitialValues({
+            title: activity.title ?? '',
+            description: activity.description ?? '',
+            category: activity.category ?? '',
+            date: activity.date?.toString().split('T')[0] ?? '', // important for <input type="date">
+            city: activity.city ?? '',
+            venue: activity.venue ?? '',
+            imageUrl: activity.imageUrl ?? '',
+          })
+        } catch (err) {
+          console.error('Failed to load activity', err)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      fetchActivity()
+    }
+  }, [action, id])
+
   if (!profile) {
     return (
       <Box sx={{ padding: 4, textAlign: 'center' }}>
         <Typography variant="h6" color="error">
           Unauthorized — Please sign in to access this page.
         </Typography>
+      </Box>
+    )
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ padding: 4, textAlign: 'center' }}>
+        <Typography>Loading activity...</Typography>
       </Box>
     )
   }
@@ -67,18 +114,10 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
       </Typography>
 
       <Formik
-        initialValues={{
-          title: '',
-          description: '',
-          category: '',
-          date: '',
-          city: '',
-          venue: '',
-          imageUrl: '',
-        }}
+        initialValues={initialValues}
+        enableReinitialize
         validationSchema={validationSchema}
         onSubmit={async (values, { setSubmitting }) => {
-          console.log(values)
           try {
             switch (action) {
               case 'create':
