@@ -9,7 +9,15 @@ type Props = {
 }
 
 export default function ActivityList({ activities }: Props) {
-  const hasActivities = activities && activities.length > 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const futureActivities = activities.filter((activity) => {
+    if (!activity.date) return false
+    return new Date(activity.date) >= today
+  })
+
+  const hasActivities = futureActivities.length > 0
   return (
     <Box
       sx={{
@@ -47,7 +55,7 @@ export default function ActivityList({ activities }: Props) {
         </Box>
       ) : (
         <Grid container spacing={4}>
-          {activities.map((activity) => (
+          {futureActivities.map((activity) => (
             <Grid item xs={12} sm={6} md={4} key={activity.id}>
               <Card
                 sx={{
