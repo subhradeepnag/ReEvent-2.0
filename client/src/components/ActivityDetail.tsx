@@ -1,6 +1,16 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardActions, Typography, Button, Snackbar, Alert } from '@mui/material'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardActions,
+  Typography,
+  Button,
+  Snackbar,
+  Alert,
+  CardMedia,
+} from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { RootState, useAppDispatch, useAppSelector } from '@/store'
 import { Activity } from '@/models/activity'
@@ -34,8 +44,13 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const attendActivity = async () => {
     try {
       await ActivitiesService.attend(activity.id, profile?.id)
+      setSnackbarMessage('You have successfully joined the activity')
+      setSnackbarSeverity('success')
+      setSnackbarOpen(true)
     } catch (error) {
-      console.error(`Something went wrong - ${error}`)
+      setSnackbarMessage(`Something went wrong - ${error}`)
+      setSnackbarSeverity('error')
+      setSnackbarOpen(true)
     }
   }
 
@@ -62,10 +77,25 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-6">
       <Card className="w-full max-w-xl shadow-lg rounded-2xl overflow-hidden">
+        {/* Image */}
+        <CardMedia
+          component="img"
+          height="220"
+          image={activity.imageUrl || '/placeholder-event.jpg'}
+          alt={activity.title}
+          sx={{ objectFit: 'cover' }}
+        />
+
+        {/* Header */}
         <CardHeader
           title={
-            <Typography variant="h5" component="div">
+            <Typography variant="h5" fontWeight={600}>
               {activity.title}
+            </Typography>
+          }
+          subheader={
+            <Typography variant="subtitle2" color="text.secondary">
+              {activity.city} • {activity.category}
             </Typography>
           }
           action={
@@ -81,48 +111,59 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
             )
           }
         />
+
+        {/* Content */}
         <CardContent>
-          <Typography variant="body1" color="textSecondary">
-            <strong>Venue:</strong> {activity.venue}
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            <strong>Category:</strong> {activity.category}
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            <strong>City:</strong> {activity.city}
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            <strong>Host Name:</strong> {activity.hostName}
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            <strong>Host Email:</strong> {activity.hostEmail}
-          </Typography>
-          <Typography variant="body2" color="textPrimary" sx={{ mt: 2 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Typography variant="body2">
+              <strong>Venue:</strong> {activity.venue}
+            </Typography>
+            <Typography variant="body2">
+              <strong>City:</strong> {activity.city}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Host:</strong> {activity.hostName}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Email:</strong> {activity.hostEmail}
+            </Typography>
+          </div>
+
+          <Typography variant="body1" sx={{ mt: 3 }}>
             {activity.description}
           </Typography>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mt-4">
-            <Typography variant="h6" color="textPrimary">
-              Attendees: {count}
-            </Typography>
+
+          <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 rounded-lg">
+            <Typography variant="h6">👥 Attendees: {count}</Typography>
           </div>
         </CardContent>
 
-        <CardActions className="flex justify-between p-4">
-          <Button variant="outlined" color="primary" fullWidth onClick={() => router.push('/activities')}>
-            ← Back
+        {/* Actions */}
+        <CardActions sx={{ gap: 2, px: 2, pb: 2 }}>
+          <Button variant="outlined" fullWidth onClick={() => router.push('/activities')}>
+            ← Back to Activities
           </Button>
+
           {!isUserActivity() && (
-            <Button variant="contained" color="primary" fullWidth onClick={attendActivity}>
-              Attend
+            <Button variant="contained" color="success" fullWidth onClick={attendActivity}>
+              Attend Activity
             </Button>
           )}
+
           {isUserActivity() && (
-            <Button variant="contained" color="secondary" fullWidth onClick={() => dispatch(decrement())}>
+            <Button
+              variant="contained"
+              color="secondary"
+              fullWidth
+              onClick={() => dispatch(decrement())}
+            >
               Cancel Activity
             </Button>
           )}
         </CardActions>
       </Card>
+
+      {/* Snackbar */}
       <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
         <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}
