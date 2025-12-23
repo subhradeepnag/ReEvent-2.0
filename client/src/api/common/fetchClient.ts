@@ -15,7 +15,7 @@ export async function fetchClient<T>(endpoint: string, { method = 'GET', body, t
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
-      cache: 'no-store', // for SSR, or remove for default caching
+      cache: 'no-store',
     })
 
     if (!res.ok) {
@@ -23,7 +23,12 @@ export async function fetchClient<T>(endpoint: string, { method = 'GET', body, t
       throw new Error(`Fetch error: ${res.status} ${errorData}`)
     }
 
-    return await res.json()
+    const contentType = res.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      return undefined as T
+    }
+
+    return (await res.json()) as T
   } catch (error) {
     console.error('[fetchClient]', error)
     throw error
