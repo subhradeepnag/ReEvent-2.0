@@ -1,22 +1,33 @@
 'use client'
 
-import { Avatar, Button, Card, CardContent, CardMedia, Typography, Grid, Box } from '@mui/material'
+import { Avatar, Button, Card, CardContent, CardMedia, Typography, Grid, Box, TextField } from '@mui/material'
 import Link from 'next/link'
 import { Activity } from '@/models'
+import { useState } from 'react'
 
 type Props = {
   activities: Activity[]
 }
 
 export default function ActivityList({ activities }: Props) {
-  // Get today's local date (midnight)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  // Show only future activities
   const futureActivities = activities.filter((activity) => {
     if (!activity.date) return false
-    return new Date(activity.date) >= today
+
+    const activityDate = new Date(activity.date)
+    activityDate.setHours(0, 0, 0, 0)
+
+    if (selectedDate) {
+      const pickedDate = new Date(selectedDate)
+      pickedDate.setHours(0, 0, 0, 0)
+      return activityDate.getTime() === pickedDate.getTime()
+    }
+
+    return activityDate >= today
   })
 
   const hasActivities = futureActivities.length > 0
@@ -42,6 +53,10 @@ export default function ActivityList({ activities }: Props) {
       >
         Explore Activities
       </Typography>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
+        <TextField type="date" label="Filter by date" InputLabelProps={{ shrink: true }} value={selectedDate ?? ''} onChange={(e) => setSelectedDate(e.target.value || null)} />
+      </Box>
 
       {!hasActivities ? (
         <Box
@@ -80,12 +95,7 @@ export default function ActivityList({ activities }: Props) {
                     },
                   }}
                 >
-                  <CardMedia
-                    component="img"
-                    height="240"
-                    image={activity.imageUrl || 'https://picsum.photos/800/600'}
-                    alt={activity.title}
-                  />
+                  <CardMedia component="img" height="240" image={activity.imageUrl || 'https://picsum.photos/800/600'} alt={activity.title} />
 
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography gutterBottom variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -101,11 +111,7 @@ export default function ActivityList({ activities }: Props) {
                     </Typography>
 
                     <Box display="flex" alignItems="center" gap={1}>
-                      <Avatar
-                        src={activity?.host?.image}
-                        alt={activity?.host?.displayName}
-                        sx={{ width: 30, height: 30 }}
-                      />
+                      <Avatar src={activity?.host?.image} alt={activity?.host?.displayName} sx={{ width: 30, height: 30 }} />
                       <Typography variant="body2" color="text.secondary">
                         Host: {activity?.hostName}
                       </Typography>
