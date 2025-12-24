@@ -1,9 +1,10 @@
 'use client'
 
-import { Avatar, Button, Card, CardContent, CardMedia, Typography, Grid, Box, TextField } from '@mui/material'
+import { Avatar, Button, Card, CardContent, CardMedia, Typography, Grid, Box, TextField, MenuItem } from '@mui/material'
 import Link from 'next/link'
 import { Activity } from '@/models'
 import { useState } from 'react'
+import indianCities from '../data/indianCities.json'
 
 type Props = {
   activities: Activity[]
@@ -11,6 +12,7 @@ type Props = {
 
 export default function ActivityList({ activities }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedCity, setSelectedCity] = useState<string | null>(null)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -21,13 +23,13 @@ export default function ActivityList({ activities }: Props) {
     const activityDate = new Date(activity.date)
     activityDate.setHours(0, 0, 0, 0)
 
-    if (selectedDate) {
-      const pickedDate = new Date(selectedDate)
-      pickedDate.setHours(0, 0, 0, 0)
-      return activityDate.getTime() === pickedDate.getTime()
-    }
+    const matchesDate = selectedDate
+      ? activityDate.getTime() === new Date(selectedDate).setHours(0, 0, 0, 0)
+      : activityDate >= today
 
-    return activityDate >= today
+    const matchesCity = selectedCity ? activity.city === selectedCity : true
+
+    return matchesDate && matchesCity
   })
 
   const hasActivities = futureActivities.length > 0
@@ -56,6 +58,14 @@ export default function ActivityList({ activities }: Props) {
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
         <TextField type="date" label="Filter by date" InputLabelProps={{ shrink: true }} value={selectedDate ?? ''} onChange={(e) => setSelectedDate(e.target.value || null)} />
+        <TextField select label="Filter by city" value={selectedCity ?? ''} onChange={(e) => setSelectedCity(e.target.value || null)} sx={{ minWidth: 200 }}>
+          <MenuItem value="">All Cities</MenuItem>
+          {indianCities.map((city) => (
+            <MenuItem key={city.name} value={city.name}>
+              {city.name}
+            </MenuItem>
+          ))}
+        </TextField>
       </Box>
 
       {!hasActivities ? (

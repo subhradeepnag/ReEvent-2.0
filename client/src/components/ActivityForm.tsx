@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from 'react'
 import { Formik, Form, useField } from 'formik'
-import { TextField, Button, Box, Typography, TextFieldProps } from '@mui/material'
+import { TextField, Button, Box, Typography, TextFieldProps, MenuItem } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
 import * as Yup from 'yup'
+import FormikSelectField from './common/FormikTextField'
+import indianCities from '../data/indianCities.json'
 
 type FormikTextFieldProps = TextFieldProps & {
   name: string
@@ -51,9 +53,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     venue: '',
     imageUrl: '',
   })
-
   const [loading, setLoading] = useState(action === 'edit')
-
   const profile = useSelector((state: RootState) => state.profile.profile)
 
   useEffect(() => {
@@ -66,7 +66,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
             title: activity.title ?? '',
             description: activity.description ?? '',
             category: activity.category ?? '',
-            date: activity.date?.toString().split('T')[0] ?? '', // important for <input type="date">
+            date: activity.date?.toString().split('T')[0] ?? '',
             city: activity.city ?? '',
             venue: activity.venue ?? '',
             imageUrl: activity.imageUrl ?? '',
@@ -92,10 +92,10 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     )
   }
 
-  if (loading) {
+  if (!profile || loading || indianCities.length === 0) {
     return (
       <Box sx={{ padding: 4, textAlign: 'center' }}>
-        <Typography>Loading activity...</Typography>
+        <Typography>Loading ...</Typography>
       </Box>
     )
   }
@@ -141,7 +141,13 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
             <FormikTextField name="description" label="Description" variant="outlined" margin="normal" fullWidth />
             <FormikTextField name="category" label="Category" variant="outlined" margin="normal" fullWidth />
             <FormikTextField name="date" label="Date" variant="outlined" margin="normal" fullWidth type="date" InputLabelProps={{ shrink: true }} />
-            <FormikTextField name="city" label="City" variant="outlined" margin="normal" fullWidth />
+            <FormikSelectField name="city" label="City" variant="outlined" margin="normal" fullWidth>
+              {indianCities.map((city) => (
+                <MenuItem key={city.name} value={city.name}>
+                  {city.name}
+                </MenuItem>
+              ))}
+            </FormikSelectField>
             <FormikTextField name="venue" label="Venue" variant="outlined" margin="normal" fullWidth />
             <FormikTextField name="imageUrl" label="Activity Image URL" variant="outlined" margin="normal" fullWidth />
             <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }} disabled={isSubmitting}>
