@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
 import { RootState, useAppDispatch, useAppSelector } from '@/store'
 import { Activity } from '@/models/activity'
 import { decrement } from '@/store/slices/counterSlice'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
 
@@ -32,6 +32,15 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  if (!isClient) {
+    return null
+  }
 
   const isUserActivity = () => {
     return profile?.email === activity.hostEmail

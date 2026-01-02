@@ -1,27 +1,29 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSelector, useDispatch } from 'react-redux'
-import { RootState, AppDispatch } from '@/store'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/store'
 import { Avatar, Box, Button, Card, CardContent, Stack, Typography } from '@mui/material'
 
 export default function ProfilePage() {
   const router = useRouter()
-  const dispatch = useDispatch<AppDispatch>()
   const token = useSelector((state: RootState) => state.auth.token)
   const profile = useSelector((state: RootState) => state.profile.profile)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    async function fetchProfile() {
-      if (!token) {
-        console.error('No token found')
-        router.push('/login')
-        return
-      }
+    setIsClient(true)
+
+    if (!token) {
+      router.push('/login')
     }
-    fetchProfile()
-  }, [token, router, dispatch])
+  }, [token, router])
+
+  // Wait until client mount to render
+  if (!isClient) {
+    return null
+  }
 
   if (!profile) {
     return (

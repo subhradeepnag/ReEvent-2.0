@@ -54,9 +54,11 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     imageUrl: '',
   })
   const [loading, setLoading] = useState(action === 'edit')
+  const [isClient, setIsClient] = useState(false)
   const profile = useSelector((state: RootState) => state.profile.profile)
 
   useEffect(() => {
+    setIsClient(true)
     if (action === 'edit' && id) {
       const fetchActivity = async () => {
         try {
@@ -81,6 +83,10 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
       fetchActivity()
     }
   }, [action, id])
+
+  if (!isClient) {
+    return null
+  }
 
   if (!profile) {
     return (
