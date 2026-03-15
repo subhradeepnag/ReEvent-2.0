@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { AppBar, Toolbar, Button, Box, Typography } from '@mui/material'
+import { AppBar, Toolbar, Button, Box, Typography, Tooltip, IconButton, Avatar } from '@mui/material'
 import Link from 'next/link'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { logout } from '@/store/slices/authSlice'
@@ -70,9 +70,19 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Button LinkComponent={Link} href="/profile" variant="contained" color="info" sx={{ mx: 1 }}>
-                Profile
-              </Button>
+              <Tooltip title="View Profile">
+                <IconButton onClick={() => router.push('/profile')} sx={{ p: 0, mx: 1 }}>
+                  <Avatar
+                    src={'/default-avatar.png'} // Should be Profile Image in Future
+                    sx={{
+                      width: 38,
+                      height: 38,
+                      border: '2px solid white',
+                      cursor: 'pointer',
+                    }}
+                  />
+                </IconButton>
+              </Tooltip>
               <Button onClick={handleLogout} variant="outlined" color="inherit" sx={{ mx: 1 }}>
                 Logout
               </Button>
