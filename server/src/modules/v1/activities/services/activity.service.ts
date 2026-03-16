@@ -57,7 +57,12 @@ export class ActivitiesService {
 
   async getAttendees(activityId: string) {
     const activity = await this.activityModel.findByPk(activityId, {
-      include: [User],
+      include: [
+        {
+          model: User,
+          attributes: { exclude: ['password'] },
+        },
+      ],
     })
 
     if (!activity) throw new NotFoundException('Activity not found')

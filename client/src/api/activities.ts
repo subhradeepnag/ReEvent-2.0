@@ -1,5 +1,5 @@
 import { fetchClient } from './common/fetchClient'
-import { Activity, ActivityFormValues } from '@/models'
+import { Activity, ActivityFormValues, Attendee } from '@/models'
 
 export const ActivitiesService = {
   list: async (token?: string): Promise<Activity[]> => {
@@ -29,11 +29,20 @@ export const ActivitiesService = {
     })
   },
   attend: async (id: string, userId: number | undefined, token?: string): Promise<void> =>
-    fetchClient(`api/v1/activities/${id}:attendees`, {
+    fetchClient(`api/v1/activities/${id}/attendees`, {
       method: 'POST',
       body: {
         userId,
       },
       token,
     }),
+  getAttendees: async (id: string, token?: string): Promise<Attendee[]> => {
+    return fetchClient(`api/v1/activities/${id}/attendees`, { token })
+  },
+  removeAttendee: async (id: string, userId: string, token?: string): Promise<Attendee[]> => {
+    return fetchClient(`api/v1/activities/${id}/attendees/${userId}`, {
+      method: 'DELETE',
+      token,
+    })
+  }
 }

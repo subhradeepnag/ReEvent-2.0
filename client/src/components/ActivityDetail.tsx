@@ -1,23 +1,14 @@
 'use client'
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardActions,
-  Typography,
-  Button,
-  Snackbar,
-  Alert,
-  CardMedia,
-} from '@mui/material'
+import { Card, CardContent, CardHeader, CardActions, Typography, Button, Snackbar, Alert, CardMedia } from '@mui/material'
 import { useRouter } from 'next/navigation'
-import { RootState, useAppDispatch, useAppSelector } from '@/store'
+import { RootState, useAppDispatch } from '@/store'
 import { Activity } from '@/models/activity'
 import { decrement } from '@/store/slices/counterSlice'
 import { useEffect, useState } from 'react'
 import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
+import { Attendee } from '@/models'
 
 type ActivityDetailProps = {
   activity: Activity
@@ -25,7 +16,6 @@ type ActivityDetailProps = {
 
 export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const router = useRouter()
-  const count = useAppSelector((state) => state.counter.value)
   const profile = useSelector((state: RootState) => state.profile.profile)
   const dispatch = useAppDispatch()
 
@@ -33,9 +23,20 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [isClient, setIsClient] = useState(false)
+   const [attendees, setAttendees] = useState<Attendee[]>([])
+
+  const fetchAttendees = async () => {
+    try {
+      const data = await ActivitiesService.getAttendees(activity.id)
+      setAttendees(data)
+    } catch (error) {
+      console.error('Failed to fetch attendees', error)
+    }
+  }
 
   useEffect(() => {
     setIsClient(true)
+    fetchAttendees()
   }, [])
 
   if (!isClient) {
@@ -44,6 +45,10 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
 
   const isUserActivity = () => {
     return profile?.email === activity.hostEmail
+  }
+
+  const isAlreadyAttending = () => {
+    return attendees.some((a) => a.id === profile?.id)
   }
 
   const handleEdit = (id: string): void => {
@@ -56,10 +61,21 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
       setSnackbarMessage('You have successfully joined the activity')
       setSnackbarSeverity('success')
       setSnackbarOpen(true)
+      await fetchAttendees()
     } catch (error) {
       setSnackbarMessage(`Something went wrong - ${error}`)
       setSnackbarSeverity('error')
       setSnackbarOpen(true)
+    }
+  }
+
+  const leaveActivity = async () => {
+    try {
+      await ActivitiesService.removeAttendee(activity.id, String(profile?.id))
+      setSnackbarMessage('You have left the activity')
+      await fetchAttendees()
+    } catch (error) {
+      setSnackbarMessage(`Something went wrong - ${error}`)
     }
   }
 
@@ -87,13 +103,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-6">
       <Card className="w-full max-w-xl shadow-lg rounded-2xl overflow-hidden">
         {/* Image */}
-        <CardMedia
-          component="img"
-          height="220"
-          image={activity.imageUrl || '/placeholder-event.jpg'}
-          alt={activity.title}
-          sx={{ objectFit: 'cover' }}
-        />
+        <CardMedia component="img" height="220" image={activity.imageUrl || '/placeholder-event.jpg'} alt={activity.title} sx={{ objectFit: 'cover' }} />
 
         {/* Header */}
         <CardHeader
@@ -143,7 +153,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
           </Typography>
 
           <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 rounded-lg">
-            <Typography variant="h6">👥 Attendees: {count}</Typography>
+            <Typography variant="h6">👥 Attendees: {attendees.length}</Typography>
           </div>
         </CardContent>
 
@@ -154,18 +164,19 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
           </Button>
 
           {!isUserActivity() && (
-            <Button variant="contained" color="success" fullWidth onClick={attendActivity}>
-              Attend Activity
-            </Button>
+            isAlreadyAttending() ? (
+              <Button variant="contained" color="error" fullWidth onClick={leaveActivity}>
+                Leave Activity
+              </Button>
+            ) : (
+              <Button variant="contained" color="success" fullWidth onClick={attendActivity}>
+                Attend Activity
+              </Button>
+            )
           )}
 
           {isUserActivity() && (
-            <Button
-              variant="contained"
-              color="secondary"
-              fullWidth
-              onClick={() => dispatch(decrement())}
-            >
+            <Button variant="contained" color="secondary" fullWidth onClick={() => dispatch(decrement())}>
               Cancel Activity
             </Button>
           )}
