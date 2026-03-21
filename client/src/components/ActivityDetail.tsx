@@ -37,6 +37,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   useEffect(() => {
     setIsClient(true)
     fetchAttendees()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!isClient) {
