@@ -3,9 +3,10 @@
 import React from 'react'
 import { AppBar, Toolbar, Button, Box, Typography, Tooltip, IconButton, Avatar } from '@mui/material'
 import Link from 'next/link'
-import { useAppSelector, useAppDispatch } from '@/store'
+import { useAppSelector, useAppDispatch, RootState } from '@/store'
 import { logout } from '@/store/slices/authSlice'
 import { useRouter } from 'next/navigation'
+import { useSelector } from 'react-redux'
 
 const pages = [
   { name: 'Activities', path: '/activities', color: 'secondary' as const },
@@ -16,6 +17,7 @@ const Navbar = () => {
   const [mounted, setMounted] = React.useState(false)
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn)
   const dispatch = useAppDispatch()
+  const profile = useSelector((state: RootState) => state.profile.profile)
   const router = useRouter()
 
   React.useEffect(() => {
@@ -73,7 +75,7 @@ const Navbar = () => {
               <Tooltip title="View Profile">
                 <IconButton onClick={() => router.push('/profile')} sx={{ p: 0, mx: 1 }}>
                   <Avatar
-                    src={'/default-avatar.png'} // Should be Profile Image in Future
+                    src={profile?.avatar ||'/default-avatar.png'} // Should be Profile Image in Future
                     sx={{
                       width: 38,
                       height: 38,

@@ -27,4 +27,9 @@ export class AccountController {
     }
     return this.accountService.login(user)
   }
+
+  @Post('google')
+  async googleLogin(@Body('token') token: string) {
+    return this.accountService.googleLogin(token)
+  }
 }

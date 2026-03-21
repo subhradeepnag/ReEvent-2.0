@@ -19,4 +19,16 @@ export class UserService {
     const user = await this.userModel.create({ name, phone, email, password: hashed })
     return user
   }
+
+  async createGoogleUser(name: string, email: string, avatar: string): Promise<User> {
+    const user = await this.userModel.create({
+      name,
+      email,
+      avatar,
+      isGoogleUser: true,
+      password: null,
+      phone: null,
+    })
+    return user
+  }
 }

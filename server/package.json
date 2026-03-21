@@ -37,6 +37,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "fs": "^0.0.1-security",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
     "newrelic": "^12.8.0",

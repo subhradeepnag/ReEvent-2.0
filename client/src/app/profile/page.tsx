@@ -45,7 +45,7 @@ export default function ProfilePage() {
     >
       <Card sx={{ width: 400, p: 4, boxShadow: 4, textAlign: 'center' }}>
         <CardContent>
-          <Avatar src={profile.image || '/default-avatar.png'} sx={{ width: 100, height: 100, margin: '0 auto', mb: 2 }} />
+          <Avatar src={profile.avatar || '/default-avatar.png'} sx={{ width: 100, height: 100, margin: '0 auto', mb: 2 }} />
           <Typography variant="h5" fontWeight="bold" gutterBottom>
             {profile.name}
           </Typography>

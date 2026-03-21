@@ -6,7 +6,7 @@ interface ProfileState {
     name: string
     email: string
     phone: string
-    image?: string
+    avatar?: string
   } | null
 }
 

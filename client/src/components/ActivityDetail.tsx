@@ -23,7 +23,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [isClient, setIsClient] = useState(false)
-   const [attendees, setAttendees] = useState<Attendee[]>([])
+  const [attendees, setAttendees] = useState<Attendee[]>([])
 
   const fetchAttendees = async () => {
     try {

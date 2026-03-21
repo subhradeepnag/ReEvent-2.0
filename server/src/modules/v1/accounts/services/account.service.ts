@@ -1,11 +1,13 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { UserService } from './user.service'
 import { User } from '../entities/user.entity'
 import * as argon from 'argon2'
 import { JwtService } from '@nestjs/jwt'
+import { OAuth2Client } from 'google-auth-library'
 
 @Injectable()
 export class AccountService {
+  private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
   constructor(
     private readonly userService: UserService,
     private readonly jwt: JwtService,
@@ -48,5 +50,24 @@ export class AccountService {
     delete userObj.password
 
     return userObj
+  }
+
+  async googleLogin(idToken: string) {
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    })
+
+    const payload = ticket.getPayload()
+    if (!payload) throw new UnauthorizedException('Invalid Google token')
+
+    const { email, name, picture } = payload
+
+    let user = await this.userService.findByEmail(email)
+    if (!user) {
+      user = await this.userService.createGoogleUser(name, email, picture)
+    }
+
+    return this.login(user)
   }
 }

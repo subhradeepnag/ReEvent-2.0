@@ -6,8 +6,10 @@ import { useDispatch } from 'react-redux'
 import { AccountsService } from '@/api/account'
 import { login } from '@/store/slices/authSlice'
 import { AppDispatch } from '@/store'
-import { Box, Button, Card, CardContent, Stack, TextField, Typography, Alert } from '@mui/material'
+import { Box, Button, Card, CardContent, Stack, TextField, Typography, Alert, Divider } from '@mui/material'
 import { setProfile } from '@/store/slices/profileSlice'
+import { getSession, signIn } from 'next-auth/react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,6 +30,33 @@ export default function LoginPage() {
     } catch (err: unknown) {
       console.error(err)
       setError('Invalid email or password. Please try again.')
+    }
+  }
+
+  async function handleGoogleLogin() {
+    try {
+      const result = await signIn('google', { redirect: false })
+      if (result?.error) {
+        setError('Google sign-in failed. Please try again.')
+        return
+      }
+      const session = await getSession()
+      if (!session?.idToken) {
+        setError('Could not retrieve Google token.')
+        return
+      }
+      const data = await AccountsService.googleLogin(session.idToken)
+      console.log('Backend JWT:', data)
+      dispatch(login(data.access_token))
+      localStorage.setItem('token', data.access_token)
+      const profileData = await AccountsService.getProfile(data.access_token)
+      console.log('Profile:', profileData)
+      dispatch(setProfile(profileData))
+      console.log('Redirecting to /activities...')
+      router.push('/activities')
+    } catch (err) {
+      console.error(err)
+      setError('Google sign-in failed.')
     }
   }
 
@@ -55,6 +84,17 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin}>
             <Stack spacing={2}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handleGoogleLogin}
+                startIcon={<Image src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width={20} height={20} alt="Google" />}
+                sx={{ textTransform: 'none', borderColor: '#dadce0', color: '#3c4043', '&:hover': { borderColor: '#aaa' } }}
+              >
+                Continue with Google
+              </Button>
+
+              <Divider>or</Divider>
               <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth required />
               <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth required />
               <Button type="submit" variant="contained" color="primary" fullWidth>

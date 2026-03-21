@@ -35,4 +35,10 @@ export const AccountsService = {
       token,
     })
   },
+  googleLogin: async (idToken: string): Promise<Signup> => {
+    return fetchClient('api/v1/accounts/google', {
+      method: 'POST',
+      body: { token: idToken },
+    })
+  },
 }

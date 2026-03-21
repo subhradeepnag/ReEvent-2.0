@@ -18,9 +18,15 @@ export class User extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
   password: string
+
+  @Column({ allowNull: true })
+  avatar: string
+
+  @Column({ defaultValue: false })
+  isGoogleUser: boolean
 
   @Column({
     type: DataType.STRING,
@@ -30,7 +36,7 @@ export class User extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
   phone: string
 
