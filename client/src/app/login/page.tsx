@@ -46,13 +46,10 @@ export default function LoginPage() {
         return
       }
       const data = await AccountsService.googleLogin(session.idToken)
-      console.log('Backend JWT:', data)
       dispatch(login(data.access_token))
       localStorage.setItem('token', data.access_token)
       const profileData = await AccountsService.getProfile(data.access_token)
-      console.log('Profile:', profileData)
       dispatch(setProfile(profileData))
-      console.log('Redirecting to /activities...')
       router.push('/activities')
     } catch (err) {
       console.error(err)
