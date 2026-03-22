@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Patch, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common'
 import { AccountService } from '../services'
 import { Request } from 'express'
 import { JwtAuthGuard } from 'src/auth'
 import { LoginDto, SignupDto } from '../dto'
+import { UpdateProfileDto } from '../dto/update-profile.dto'
 
 @Controller('api/v1/accounts')
 export class AccountController {
@@ -12,6 +13,13 @@ export class AccountController {
   async getUser(@Req() req: Request) {
     const user = req.user as { sub: number; email: string }
     return this.accountService.getUser(user.email)
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  async updateProfile(@Req() req: Request, @Body() body: UpdateProfileDto) {
+    const user = req.user as { sub: number; email: string }
+    return this.accountService.updateProfile(user.email, body)
   }
 
   @Post('signup')

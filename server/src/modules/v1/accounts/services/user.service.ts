@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { User } from '../entities'
 import * as argon from 'argon2'
+import { UpdateProfileDto } from '../dto/update-profile.dto'
 
 @Injectable()
 export class UserService {
@@ -30,5 +31,9 @@ export class UserService {
       phone: null,
     })
     return user
+  }
+
+  async updateUser(email: string, dto: UpdateProfileDto) {
+    return this.userModel.update(dto, { where: { email } })
   }
 }

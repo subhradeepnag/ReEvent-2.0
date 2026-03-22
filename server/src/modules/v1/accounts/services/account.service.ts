@@ -4,6 +4,7 @@ import { User } from '../entities/user.entity'
 import * as argon from 'argon2'
 import { JwtService } from '@nestjs/jwt'
 import { OAuth2Client } from 'google-auth-library'
+import { UpdateProfileDto } from '../dto/update-profile.dto'
 
 @Injectable()
 export class AccountService {
@@ -20,6 +21,11 @@ export class AccountService {
     }
     const user = await this.userService.createUser(name, phone, email, password, avatar)
     return await this.login(user)
+  }
+
+  async updateProfile(email: string, dto: UpdateProfileDto) {
+    await this.userService.updateUser(email, dto)
+    return this.getUser(email)
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
