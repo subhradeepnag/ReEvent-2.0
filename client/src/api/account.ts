@@ -13,6 +13,13 @@ interface Profile {
   email: string
   name: string
   phone: string
+  avatar?: string
+}
+
+interface UpdateProfile {
+  name?: string
+  phone?: string
+  avatar?: string
 }
 
 export const AccountsService = {
@@ -22,16 +29,21 @@ export const AccountsService = {
       body: { name, phone, email, password, avatar },
     })
   },
-
   login: async (email: string, password: string): Promise<Login> => {
     return fetchClient('api/v1/accounts/login', {
       method: 'POST',
       body: { email, password },
     })
   },
-
   getProfile: async (token: string): Promise<Profile> => {
     return fetchClient('api/v1/accounts/profile', {
+      token,
+    })
+  },
+  updateProfile: async (token: string, data: UpdateProfile): Promise<Profile> => {
+    return fetchClient('api/v1/accounts/profile', {
+      method: 'PATCH',
+      body: data,
       token,
     })
   },
