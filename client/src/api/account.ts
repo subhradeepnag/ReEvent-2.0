@@ -16,10 +16,10 @@ interface Profile {
 }
 
 export const AccountsService = {
-  signup: async ({ name, phone, email, password }: { name: string; phone: string; email: string; password: string }): Promise<Signup> => {
+  signup: async ({ name, phone, email, password, avatar }: { name: string; phone: string; email: string; password: string; avatar?: string }): Promise<Signup> => {
     return fetchClient('api/v1/accounts/signup', {
       method: 'POST',
-      body: { name, phone, email, password },
+      body: { name, phone, email, password, avatar },
     })
   },
 

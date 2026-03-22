@@ -13,12 +13,12 @@ export class AccountService {
     private readonly jwt: JwtService,
   ) {}
 
-  async signup(name: string, phone: string, email: string, password: string) {
+  async signup(name: string, phone: string, email: string, password: string, avatar?: string) {
     const existing = await this.userService.findByEmail(email)
     if (existing) {
       throw new ConflictException('User already exists')
     }
-    const user = await this.userService.createUser(name, phone, email, password)
+    const user = await this.userService.createUser(name, phone, email, password, avatar)
     return await this.login(user)
   }
 

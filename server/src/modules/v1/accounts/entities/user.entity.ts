@@ -22,7 +22,7 @@ export class User extends Model {
   })
   password: string
 
-  @Column({ allowNull: true })
+  @Column({ allowNull: true, type: 'text' })
   avatar: string
 
   @Column({ defaultValue: false })

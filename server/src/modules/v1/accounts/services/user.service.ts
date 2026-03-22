@@ -14,9 +14,9 @@ export class UserService {
     return this.userModel.findOne({ where: { email } })
   }
 
-  async createUser(name: string, phone: string, email: string, password: string): Promise<User> {
+  async createUser(name: string, phone: string, email: string, password: string, avatar?: string): Promise<User> {
     const hashed = await argon.hash(password)
-    const user = await this.userModel.create({ name, phone, email, password: hashed })
+    const user = await this.userModel.create({ name, phone, email, password: hashed, avatar })
     return user
   }
 

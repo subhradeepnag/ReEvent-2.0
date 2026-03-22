@@ -16,7 +16,7 @@ export class AccountController {
 
   @Post('signup')
   async signup(@Body() body: SignupDto) {
-    return this.accountService.signup(body.name, body.phone, body.email, body.password)
+    return this.accountService.signup(body.name, body.phone, body.email, body.password, body.avatar)
   }
 
   @Post('login')
