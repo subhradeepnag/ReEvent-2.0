@@ -10,7 +10,7 @@ import { useSelector } from 'react-redux'
 
 const pages = [
   { name: 'Activities', path: '/activities', color: 'secondary' as const },
-  { name: 'Create Activity', path: '/createActivity', color: 'success' as const },
+  { name: 'Create Activity', path: '/activities/create', color: 'success' as const },
 ]
 
 const Navbar = () => {
