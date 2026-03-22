@@ -26,7 +26,7 @@ export class Activity extends Model {
   @Column(DataType.STRING)
   venue: string
 
-  @Column(DataType.STRING)
+  @Column(DataType.TEXT)
   imageUrl: string
 
   @Column(DataType.STRING)

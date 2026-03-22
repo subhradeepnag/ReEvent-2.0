@@ -32,7 +32,7 @@ const validationSchema = Yup.object({
   date: Yup.date().required('Date is required').nullable(),
   city: Yup.string().required('City is required'),
   venue: Yup.string().required('Venue is required'),
-  imageUrl: Yup.string().url('Must be a valid URL').required('Image is required'),
+  imageUrl: Yup.string().required('Image is required'),
 })
 
 const FormikTextField = ({ name, ...props }: FormikTextFieldProps) => {
@@ -56,6 +56,30 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
   const [loading, setLoading] = useState(action === 'edit')
   const [isClient, setIsClient] = useState(false)
   const profile = useSelector((state: RootState) => state.profile.profile)
+  const [imagePreview, setImagePreview] = useState<string>('')
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (field: string, value: string) => void) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImagePreview(URL.createObjectURL(file))
+
+    const img = new Image()
+    img.src = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const MAX = 400
+      const ratio = Math.min(MAX / img.width, MAX / img.height)
+      canvas.width = img.width * ratio
+      canvas.height = img.height * ratio
+
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+      const compressed = canvas.toDataURL('image/jpeg', 0.7)
+      setFieldValue('imageUrl', compressed)
+    }
+  }
 
   useEffect(() => {
     setIsClient(true)
@@ -73,6 +97,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
             venue: activity.venue ?? '',
             imageUrl: activity.imageUrl ?? '',
           })
+          setImagePreview(activity.imageUrl ?? '')
         } catch (err) {
           console.error('Failed to load activity', err)
         } finally {
@@ -141,7 +166,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
           }
         }}
       >
-        {({ isSubmitting }) => (
+        {({ isSubmitting, setFieldValue }) => (
           <Form>
             <FormikTextField name="title" label="Title" variant="outlined" margin="normal" fullWidth />
             <FormikTextField name="description" label="Description" variant="outlined" margin="normal" fullWidth />
@@ -155,7 +180,18 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
               ))}
             </FormikSelectField>
             <FormikTextField name="venue" label="Venue" variant="outlined" margin="normal" fullWidth />
-            <FormikTextField name="imageUrl" label="Activity Image URL" variant="outlined" margin="normal" fullWidth />
+            <Box sx={{ mt: 1, mb: 1 }}>
+              <Typography variant="body2" color="text.secondary" mb={1}>
+                Activity Image
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {imagePreview && <Box component="img" src={imagePreview} alt="preview" sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, border: '1px solid #ddd' }} />}
+                <Button variant="outlined" component="label" size="small">
+                  {imagePreview ? 'Change Image' : 'Upload Image'}
+                  <input type="file" accept="image/*" hidden onChange={(e) => handleImageChange(e, setFieldValue)} />
+                </Button>
+              </Box>
+            </Box>
             <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }} disabled={isSubmitting}>
               Submit
             </Button>
