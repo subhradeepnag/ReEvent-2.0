@@ -2,9 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardActions, Typography, Button, Snackbar, Alert, CardMedia } from '@mui/material'
 import { useRouter } from 'next/navigation'
-import { RootState, useAppDispatch } from '@/store'
+import { RootState } from '@/store'
 import { Activity } from '@/models/activity'
-import { decrement } from '@/store/slices/counterSlice'
 import { useEffect, useState } from 'react'
 import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
@@ -17,8 +16,6 @@ type ActivityDetailProps = {
 export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const router = useRouter()
   const profile = useSelector((state: RootState) => state.profile.profile)
-  const dispatch = useAppDispatch()
-
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
@@ -37,7 +34,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   useEffect(() => {
     setIsClient(true)
     fetchAttendees()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!isClient) {
@@ -164,8 +161,8 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
             ← Back to Activities
           </Button>
 
-          {!isUserActivity() && (
-            isAlreadyAttending() ? (
+          {!isUserActivity() &&
+            (isAlreadyAttending() ? (
               <Button variant="contained" color="error" fullWidth onClick={leaveActivity}>
                 Leave Activity
               </Button>
@@ -173,13 +170,17 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
               <Button variant="contained" color="success" fullWidth onClick={attendActivity}>
                 Attend Activity
               </Button>
-            )
-          )}
+            ))}
 
           {isUserActivity() && (
-            <Button variant="contained" color="secondary" fullWidth onClick={() => dispatch(decrement())}>
-              Cancel Activity
-            </Button>
+            <>
+              {/* <Button variant="contained" color="secondary" fullWidth onClick={() => dispatch(decrement())}>
+                Cancel Activity
+              </Button> */}
+              <Button variant="contained" color="info" fullWidth onClick={() => router.push(`/activities/${activity.id}/attendees`)}>
+                👥 View Attendees
+              </Button>
+            </>
           )}
         </CardActions>
       </Card>
