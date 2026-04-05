@@ -1,6 +1,7 @@
 'use client'
 
-import { Avatar, Button, Card, CardContent, CardMedia, Typography, Grid, Box, TextField, MenuItem } from '@mui/material'
+import { Avatar, Button, Card, CardContent, CardMedia, Typography, Grid, Box, TextField, MenuItem, Paper, InputAdornment } from '@mui/material'
+import { CalendarToday, LocationOn } from '@mui/icons-material'
 import Link from 'next/link'
 import { Activity } from '@/models'
 import { useState } from 'react'
@@ -23,9 +24,7 @@ export default function ActivityList({ activities }: Props) {
     const activityDate = new Date(activity.date)
     activityDate.setHours(0, 0, 0, 0)
 
-    const matchesDate = selectedDate
-      ? activityDate.getTime() === new Date(selectedDate).setHours(0, 0, 0, 0)
-      : activityDate >= today
+    const matchesDate = selectedDate ? activityDate.getTime() === new Date(selectedDate).setHours(0, 0, 0, 0) : activityDate >= today
 
     const matchesCity = selectedCity ? activity.city === selectedCity : true
 
@@ -56,9 +55,52 @@ export default function ActivityList({ activities }: Props) {
         Explore Activities
       </Typography>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
-        <TextField type="date" label="Filter by date" InputLabelProps={{ shrink: true }} value={selectedDate ?? ''} onChange={(e) => setSelectedDate(e.target.value || null)} />
-        <TextField select label="Filter by city" value={selectedCity ?? ''} onChange={(e) => setSelectedCity(e.target.value || null)} sx={{ minWidth: 200 }}>
+      <Box
+        component={Paper}
+        elevation={3}
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: 2,
+          alignItems: 'center',
+          p: 2,
+          mb: 5,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.96), rgba(240,248,255,0.95))',
+          boxShadow: '0 14px 40px rgba(15, 23, 42, 0.12)',
+        }}
+      >
+        <TextField
+          type="date"
+          label="Filter by date"
+          InputLabelProps={{ shrink: true }}
+          value={selectedDate ?? ''}
+          onChange={(e) => setSelectedDate(e.target.value || null)}
+          sx={{ minWidth: 240, flex: '1 1 240px', backgroundColor: '#fff', borderRadius: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <CalendarToday color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <TextField
+          select
+          label="Filter by city"
+          value={selectedCity ?? ''}
+          onChange={(e) => setSelectedCity(e.target.value || null)}
+          sx={{ minWidth: 240, flex: '1 1 240px', backgroundColor: '#fff', borderRadius: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LocationOn color="action" />
+              </InputAdornment>
+            ),
+          }}
+        >
           <MenuItem value="">All Cities</MenuItem>
           {indianCities.map((city) => (
             <MenuItem key={city.name} value={city.name}>
