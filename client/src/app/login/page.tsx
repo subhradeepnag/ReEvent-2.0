@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
+  // Handler for form submission to log in the user. It calls the AccountsService to authenticate the user, updates the Redux store with the authentication token and user profile, and navigates to the activities page on success. If there's an error during login, it sets an error message to be displayed to the user.
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     try {
@@ -33,6 +34,7 @@ export default function LoginPage() {
     }
   }
 
+  // Handler for Google login. It uses NextAuth to sign in with Google, retrieves the ID token, and then calls the AccountsService to log in with the Google token. On success, it updates the Redux store and navigates to the activities page. If there's an error during the Google login process, it sets an appropriate error message.
   async function handleGoogleLogin() {
     try {
       const result = await signIn('google', { redirect: false })

@@ -6,6 +6,7 @@ function formatMessage(text: string) {
   const lines = text.split('\n').filter((line) => line.trim())
   const elements: JSX.Element[] = []
 
+  // Process each line to handle numbered lists, bold text, and regular paragraphs, applying appropriate styling for each case
   lines.forEach((line, index) => {
     // Handle numbered lists (e.g., "1. **Text**: description")
     if (/^\d+\.\s+\*\*.*\*\*:/.test(line)) {
@@ -24,7 +25,7 @@ function formatMessage(text: string) {
       }
     }
 
-    // Handle bold text (**text**)
+    // Handle bold text (e.g., "**Bold Text**")
     if (line.includes('**')) {
       const parts = line.split(/(\*\*.*?\*\*)/)
       const formattedParts = parts.map((part, partIndex) => {
@@ -56,11 +57,13 @@ function formatMessage(text: string) {
   return elements
 }
 
+// Chatbot component that provides a chat interface for users to interact with a chat assistant. It allows users to send messages and receive responses from the assistant, with the ability to minimize and maximize the chat window. The component manages the state of messages, user input, and the minimized state of the chat window, and it formats the assistant's responses for better readability.
 export default function Chatbot() {
   const [messages, setMessages] = useState<{ role: string; text: string }[]>([])
   const [input, setInput] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
 
+  // Function to send a message to the chat assistant. It updates the messages state with the user's message, sends the message to the ChatService, and then updates the messages state with the assistant's response.
   const sendMessage = async () => {
     if (!input.trim()) return
     setMessages((prev) => [...prev, { role: 'user', text: input }])
@@ -69,7 +72,7 @@ export default function Chatbot() {
     const data = await ChatService.sendMessage(input)
     setMessages((prev) => [...prev, { role: 'bot', text: data.reply }])
   }
-
+  // Function to format the assistant's response text, handling numbered lists, bold text, and regular paragraphs for better readability in the chat interface
   if (isMinimized) {
     return (
       <div className="fixed bottom-4 right-4">

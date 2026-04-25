@@ -35,6 +35,7 @@ export default function ProfilePage() {
     }
   }, [profile])
 
+  // Handler for avatar image change. It creates a preview of the selected image and resizes it to a maximum of 100x100 pixels before setting it as the new avatar in the component state.
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -55,6 +56,7 @@ export default function ProfilePage() {
     }
   }
 
+  // Handler for saving profile changes. It calls the AccountsService to update the user's profile with the new name, phone, and avatar, updates the Redux store with the updated profile, and exits edit mode. If there's an error during the update process, it sets an error message to be displayed to the user.
   async function handleSave() {
     try {
       const updated = await AccountsService.updateProfile(token!, { name, phone, avatar })
@@ -67,6 +69,7 @@ export default function ProfilePage() {
     }
   }
 
+  // Handler for canceling profile edits. It resets the name, phone, and avatar fields to their original values from the profile, exits edit mode, and clears any error messages.
   function handleCancel() {
     if (profile) {
       setName(profile.name)

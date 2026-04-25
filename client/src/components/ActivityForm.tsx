@@ -35,6 +35,7 @@ const validationSchema = Yup.object({
   imageUrl: Yup.string().required('Image is required'),
 })
 
+// Custom Formik-connected TextField component that displays validation errors
 const FormikTextField = ({ name, ...props }: FormikTextFieldProps) => {
   const [field, meta] = useField(name)
   const isError = meta.touched && Boolean(meta.error)
@@ -42,6 +43,7 @@ const FormikTextField = ({ name, ...props }: FormikTextFieldProps) => {
   return <TextField {...field} {...props} error={isError} helperText={isError ? meta.error : ''} />
 }
 
+// Main component for creating or editing an activity, with form validation and image upload/preview functionality
 const ActivityForm = ({ action, id }: ActivityFormProps) => {
   const router = useRouter()
   const [initialValues, setInitialValues] = useState({
@@ -58,6 +60,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
   const profile = useSelector((state: RootState) => state.profile.profile)
   const [imagePreview, setImagePreview] = useState<string>('')
 
+  // Function to handle image file selection, generate a preview, and compress the image before setting it in the form state
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (field: string, value: string) => void) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -81,6 +84,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     }
   }
 
+  // Load activity data when editing, and set up the form with initial values and image preview. Also set isClient to true to avoid hydration issues. If creating a new activity, just set isClient to true.
   useEffect(() => {
     setIsClient(true)
     if (action === 'edit' && id) {
@@ -109,10 +113,12 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     }
   }, [action, id])
 
+  // If we're still on the server, don't render anything to avoid hydration mismatch. If user is not logged in, show an unauthorized message. If data is still loading, show a loading message.
   if (!isClient) {
     return null
   }
 
+  // If user is not logged in, show an unauthorized message
   if (!profile) {
     return (
       <Box sx={{ padding: 4, textAlign: 'center' }}>
@@ -123,6 +129,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     )
   }
 
+  // If data is still loading, show a loading message
   if (!profile || loading || indianCities.length === 0) {
     return (
       <Box sx={{ padding: 4, textAlign: 'center' }}>

@@ -11,6 +11,7 @@ type Props = {
   activities: Activity[]
 }
 
+// Component to display a list of activities with filtering options for date and city. It shows a card for each activity with its details and a link to view more information about the activity. If no activities are found, it displays a message indicating that there are no activities available.
 export default function ActivityList({ activities }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedCity, setSelectedCity] = useState<string | null>(null)
@@ -18,6 +19,7 @@ export default function ActivityList({ activities }: Props) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  // Filter activities to only include those that are in the future (or on the selected date) and match the selected city (if any)
   const futureActivities = activities.filter((activity) => {
     if (!activity.date) return false
 

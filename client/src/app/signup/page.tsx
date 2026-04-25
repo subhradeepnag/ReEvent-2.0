@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [avatarPreview, setAvatarPreview] = useState<string>('')
   const [error, setError] = useState('')
 
+  // Handler for avatar image change. It creates a preview of the selected image and resizes it to a maximum of 100x100 pixels before setting it as the new avatar in the component state.
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -41,6 +42,7 @@ export default function SignupPage() {
     }
   }
 
+  // Handler for form submission to log in the user. It calls the AccountsService to authenticate the user, updates the Redux store with the authentication token and user profile, and navigates to the activities page on success. If there's an error during login, it sets an error message to be displayed to the user.
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     try {

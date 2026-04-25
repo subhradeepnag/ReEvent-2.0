@@ -22,6 +22,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const [isClient, setIsClient] = useState(false)
   const [attendees, setAttendees] = useState<Attendee[]>([])
 
+  // Function to fetch attendees for the activity
   const fetchAttendees = async () => {
     try {
       const data = await ActivitiesService.getAttendees(activity.id)
@@ -31,28 +32,34 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     }
   }
 
+  // Set isClient to true when component mounts to avoid hydration issues, and fetch attendees for the activity
   useEffect(() => {
     setIsClient(true)
     fetchAttendees()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // If we're still on the server, don't render anything to avoid hydration mismatch
   if (!isClient) {
     return null
   }
 
+  // Helper function to check if the logged-in user is the host of the activity
   const isUserActivity = () => {
     return profile?.email === activity.hostEmail
   }
 
+  // Helper function to check if the logged-in user is already attending the activity
   const isAlreadyAttending = () => {
     return attendees.some((a) => a.id === profile?.id)
   }
 
+  // Handler for Edit button click - navigates to the edit page for the activity
   const handleEdit = (id: string): void => {
     router.push(`${id}/edit`)
   }
 
+  // Handler for Attend button click - calls the API to attend the activity, shows a snackbar message, and refreshes the attendees list
   const attendActivity = async () => {
     try {
       await ActivitiesService.attend(activity.id, profile?.id)
@@ -67,6 +74,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     }
   }
 
+  // Handler for Leave button click - calls the API to leave the activity, shows a snackbar message, and refreshes the attendees list
   const leaveActivity = async () => {
     try {
       await ActivitiesService.removeAttendee(activity.id, String(profile?.id))
@@ -77,6 +85,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     }
   }
 
+  // Handler for Delete button click - shows a confirmation dialog, calls the API to delete the activity if confirmed, shows a snackbar message, and navigates back to the activities list
   const handleDelete = async (id: string): Promise<void> => {
     const confirmed = confirm('Are you sure you want to delete this activity?')
     if (!confirmed) return

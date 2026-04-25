@@ -18,6 +18,7 @@ export default function ActivityAttendees({ activityId }: ActivityAttendeesProps
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
+  // Fetch attendees when component mounts or activityId changes
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -32,6 +33,7 @@ export default function ActivityAttendees({ activityId }: ActivityAttendeesProps
     fetch()
   }, [activityId])
 
+  // Filter attendees based on search query
   const filtered = attendees.filter((a) =>
     a.name.toLowerCase().includes(search.toLowerCase()) ||
     a.email.toLowerCase().includes(search.toLowerCase())
