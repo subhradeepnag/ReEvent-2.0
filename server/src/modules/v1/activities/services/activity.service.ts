@@ -18,8 +18,12 @@ export class ActivitiesService {
     return this.activityModel.findAll()
   }
 
-  findOne(id: string): Promise<Activity> {
-    return this.activityModel.findByPk(id)
+  async findOne(id: string): Promise<Activity> {
+    const activity = await this.activityModel.findByPk(id)
+    if (!activity) {
+      throw new NotFoundException('Activity not found')
+    }
+    return activity
   }
 
   create(activity: Partial<Activity>): Promise<Activity> {
