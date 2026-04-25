@@ -1,23 +1,20 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common'
-import { Response, Request } from 'express'
+import { Response } from 'express'
 
 @Catch()
 export class RFC2ExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
-    const request = host.switchToHttp().getRequest<Request>()
     const response = host.switchToHttp().getResponse<Response>()
     let status = 500
-    const instance = request.correlation?.leaf
     let errorResponse = {
       status,
       title: 'Something Went Wrong',
       detail: 'Something Went Wrong',
-      instance,
     }
 
     if (exception instanceof HttpException) {
       status = exception.getStatus()
-      errorResponse = this.buildErrorResponse(exception, status, instance)
+      errorResponse = this.buildErrorResponse(exception, status)
     } else if (exception instanceof Error) {
       errorResponse.detail = exception.message
     }
@@ -25,13 +22,12 @@ export class RFC2ExceptionFilter implements ExceptionFilter {
     response.status(status).json(errorResponse)
   }
 
-  buildErrorResponse(exception: HttpException, status: number, instance: string) {
+  buildErrorResponse(exception: HttpException, status: number) {
     const response = exception.getResponse()
     let errorDetails = {
       status,
       title: 'Something went wrong',
       detail: 'Something went wrong',
-      instance,
     }
 
     if (typeof response === 'object') {

@@ -6,9 +6,5 @@ declare module 'express' {
     headers: {
       authorization?: string
     }
-    correlation: {
-      root?: string
-      leaf?: string
-    }
   }
 }

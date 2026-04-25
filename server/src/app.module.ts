@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { CommonModule } from './common'
 import { V1Module } from './modules/v1'
 import * as connectionString from 'pg-connection-string'
 import { SequelizeModule } from '@nestjs/sequelize'
@@ -32,7 +31,6 @@ import { AuthModule } from './auth'
       inject: [ConfigService],
     }),
     V1Module,
-    CommonModule,
     AuthModule,
   ],
   controllers: [],
