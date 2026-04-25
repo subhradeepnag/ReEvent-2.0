@@ -1,11 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
-import { ActivitiesService } from '../services'
+import { ActivitiesService, PaymentService } from '../services'
 import { Activity } from '../entities'
-import { AddAttendeeDto } from '../dto/add-attendee.dto'
+import { JoinActivityDto, VerifyPaymentDto, AddAttendeeDto } from '../dto'
 
 @Controller('api/v1/activities')
 export class ActivitiesController {
-  constructor(private readonly activitiesService: ActivitiesService) {}
+  constructor(
+    private readonly activitiesService: ActivitiesService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   @Get()
   findAll() {
@@ -45,5 +48,23 @@ export class ActivitiesController {
   @Delete(':id/attendees/:userId')
   removeAttendee(@Param('id') activityId: string, @Param('userId') userId: string) {
     return this.activitiesService.removeAttendee(activityId, userId)
+  }
+
+  // Endpoint for payment verification callback from client. Client will call this after receiving payment details from Razorpay and completing the payment on the frontend
+  @Post('payment/verify')
+  verifyPayment(@Body() dto: VerifyPaymentDto) {
+    return this.paymentService.verifyPayment(dto.orderId, dto.paymentId, dto.signature)
+  }
+
+  // Endpoint for client to call when user wants to join an activity. If the activity is paid, this will create a Razorpay order and return the order details to the client. If the activity is free, it will just create a registration with status FREE
+  @Post(':id/join')
+  join(@Param('id') activityId: string, @Body() dto: JoinActivityDto) {
+    return this.paymentService.joinActivity(activityId, dto.userId)
+  }
+
+  // Endpoint for client to check the registration status of a user for a specific activity. This can be used by the frontend to show appropriate UI (e.g. "Join" button, "Payment pending" message, "Registered" status, etc.)
+  @Get(':id/registration-status/:userId')
+  registrationStatus(@Param('id') activityId: string, @Param('userId') userId: string) {
+    return this.paymentService.getRegistrationStatus(activityId, userId)
   }
 }
