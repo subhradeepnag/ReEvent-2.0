@@ -23,6 +23,9 @@ export interface Activity {
   isHost: boolean
   isGoing: boolean
   attendees: Attendee[]
+  isPaid: boolean
+  price: number
+  maxAttendees: number | null
 }
 
 export interface ActivityFormValues {
