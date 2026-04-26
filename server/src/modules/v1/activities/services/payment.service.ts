@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/sequelize'
 import { Sequelize } from 'sequelize-typescript'
 import * as crypto from 'crypto'
-import { Activity, ActivityRegistration, RegistrationStatus } from '../entities'
+import { Activity, ActivityAttendee, ActivityRegistration, RegistrationStatus } from '../entities'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Razorpay = require('razorpay')
 
@@ -16,6 +16,9 @@ export class PaymentService {
 
     @InjectModel(ActivityRegistration)
     private registrationModel: typeof ActivityRegistration,
+
+    @InjectModel(ActivityAttendee)
+    private attendeeModel: typeof ActivityAttendee,
 
     private sequelize: Sequelize,
   ) {
@@ -69,13 +72,13 @@ export class PaymentService {
 
     // If activity is free, create a FREE registration immediately
     if (!activity.isPaid) {
-      const registration = await this.registrationModel.create({
-        activityId,
-        userId, // ← just userId now
-        status: RegistrationStatus.FREE,
-        amountPaid: 0,
+      await this.sequelize.transaction(async (t) => {
+        await this.registrationModel.create({ activityId, userId, status: RegistrationStatus.FREE, amountPaid: 0 }, { transaction: t })
+
+        // Also add to attendees
+        await this.attendeeModel.create({ user_id: userId, activity_id: activityId, is_host: false }, { transaction: t })
       })
-      return { type: 'free', registration }
+      return { type: 'free' }
     }
 
     // For paid activities, create a Razorpay order and a PENDING registration
@@ -138,6 +141,9 @@ export class PaymentService {
         },
         { transaction: t },
       )
+
+      // Also add to attendees
+      await this.attendeeModel.create({ user_id: registration.userId, activity_id: registration.activityId, is_host: false }, { transaction: t })
     })
 
     return { success: true, registrationId: registration.id }
