@@ -7,6 +7,7 @@ import { useAppSelector, useAppDispatch, RootState } from '@/store'
 import { logout } from '@/store/slices/authSlice'
 import { useRouter } from 'next/navigation'
 import { useSelector } from 'react-redux'
+import { signOut } from 'next-auth/react'
 
 const pages = [
   { name: 'Activities', path: '/activities', color: 'secondary' as const },
@@ -29,6 +30,8 @@ const Navbar = () => {
   function handleLogout() {
     dispatch(logout())
     localStorage.removeItem('token')
+    // Also drop the NextAuth session, otherwise a Google login outlives the logout.
+    signOut({ redirect: false })
     router.push('/')
   }
 
