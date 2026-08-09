@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Patch, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common'
 import { AccountService } from '../services'
 import { Request } from 'express'
-import { JwtAuthGuard } from 'src/auth'
+import { JwtAuthGuard } from '../../../../auth'
 import { LoginDto, SignupDto } from '../dto'
 import { UpdateProfileDto } from '../dto/update-profile.dto'
 
