@@ -1,3 +1,5 @@
 export * from './activity'
 export * from './user'
 export * from './attendee'
+export * from './activityRegistration'
+export * from './payment'

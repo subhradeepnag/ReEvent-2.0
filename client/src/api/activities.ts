@@ -1,5 +1,5 @@
 import { fetchClient } from './common/fetchClient'
-import { Activity, ActivityFormValues, Attendee } from '@/models'
+import { Activity, ActivityFormValues, ActivityRegistration, Attendee, JoinActivityResponse, VerifyPaymentResponse } from '@/models'
 
 export const ActivitiesService = {
   list: async (token?: string): Promise<Activity[]> => {
@@ -45,7 +45,7 @@ export const ActivitiesService = {
       token,
     })
   },
-  joinActivity: async (activityId: string, userId: number | undefined, token?: string): Promise<void> => {
+  joinActivity: async (activityId: string, userId: number | undefined, token?: string): Promise<JoinActivityResponse> => {
     return fetchClient(`api/v1/activities/${activityId}/join`, {
       method: 'POST',
       body: {
@@ -54,20 +54,20 @@ export const ActivitiesService = {
       token,
     })
   },
-  verifyPayment: async (orderId: string, paymentId: string, signature: string, token?: string): Promise<void> => {
-    return fetchClient(`api/v1/activities/payments/verify`, {
+  verifyPayment: async (orderId: string, paymentId: string, signature: string, token?: string): Promise<VerifyPaymentResponse> => {
+    return fetchClient(`api/v1/activities/payment/verify`, {
       method: 'POST',
       body: {
         orderId,
         paymentId,
-        signature
+        signature,
       },
       token,
     })
   },
-  getRegistrationStatus: async (activityId: string, userId: number | undefined, token?: string): Promise<string> => {
+  getRegistrationStatus: async (activityId: string, userId: number | undefined, token?: string): Promise<ActivityRegistration | null> => {
     return fetchClient(`api/v1/activities/${activityId}/registration-status/${userId}`, {
       token,
     })
-  }
+  },
 }
