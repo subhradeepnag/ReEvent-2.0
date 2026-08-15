@@ -28,9 +28,18 @@ export interface Activity {
   maxAttendees: number | null
 }
 
+// The payload sent to the create/update endpoints — price and maxAttendees are coerced from
+// the form's string inputs before submitting, so the server always receives real numbers
 export interface ActivityFormValues {
   id?: string
   title: string
-  date: string | null
   description: string
+  category: string
+  date: string | null
+  city: string
+  venue: string
+  imageUrl: string
+  isPaid: boolean
+  price: number
+  maxAttendees: number | null
 }

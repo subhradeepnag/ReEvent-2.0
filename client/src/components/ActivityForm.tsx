@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from 'react'
 import { Formik, Form, useField } from 'formik'
-import { TextField, Button, Box, Typography, TextFieldProps, MenuItem } from '@mui/material'
+import { TextField, Button, Box, Typography, TextFieldProps, MenuItem, FormControlLabel, Switch, InputAdornment } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
+import { ActivityFormValues } from '@/models'
 import * as Yup from 'yup'
 import FormikSelectField from './common/FormikTextField'
 import indianCities from '../data/indianCities.json'
@@ -25,6 +26,9 @@ const formTitles: Record<string, string> = {
   edit: 'Edit Activity',
 }
 
+// Number inputs come back as '' when empty, which Yup would otherwise cast to NaN — treat that as "not provided"
+const emptyStringToUndefined = (value: number, original: unknown) => (original === '' ? undefined : value)
+
 const validationSchema = Yup.object({
   title: Yup.string().required('Title is required'),
   description: Yup.string().required('Description is required'),
@@ -33,6 +37,16 @@ const validationSchema = Yup.object({
   city: Yup.string().required('City is required'),
   venue: Yup.string().required('Venue is required'),
   imageUrl: Yup.string().required('Image is required'),
+  isPaid: Yup.boolean(),
+  // Price is only meaningful — and only required — when the activity is marked as paid
+  price: Yup.number()
+    .transform(emptyStringToUndefined)
+    .when('isPaid', {
+      is: true,
+      then: (schema) => schema.typeError('Price must be a number').required('Price is required').moreThan(0, 'Price must be greater than 0'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+  maxAttendees: Yup.number().transform(emptyStringToUndefined).typeError('Capacity must be a number').integer('Capacity must be a whole number').min(1, 'Capacity must be at least 1').notRequired(),
 })
 
 // Custom Formik-connected TextField component that displays validation errors
@@ -54,6 +68,10 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     city: '',
     venue: '',
     imageUrl: '',
+    isPaid: false,
+    // Kept as strings while editing so the inputs can be genuinely empty; coerced to numbers on submit
+    price: '',
+    maxAttendees: '',
   })
   const [loading, setLoading] = useState(action === 'edit')
   const [isClient, setIsClient] = useState(false)
@@ -100,6 +118,9 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
             city: activity.city ?? '',
             venue: activity.venue ?? '',
             imageUrl: activity.imageUrl ?? '',
+            isPaid: activity.isPaid ?? false,
+            price: activity.isPaid ? String(activity.price ?? '') : '',
+            maxAttendees: activity.maxAttendees === null || activity.maxAttendees === undefined ? '' : String(activity.maxAttendees),
           })
           setImagePreview(activity.imageUrl ?? '')
         } catch (err) {
@@ -157,12 +178,21 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
         validationSchema={validationSchema}
         onSubmit={async (values, { setSubmitting }) => {
           try {
+            // Turn the string-backed number inputs into the shape the API expects.
+            // An unpaid activity always sends price 0, so clearing the toggle can't leave a stale price behind.
+            const payload: ActivityFormValues = {
+              ...values,
+              isPaid: values.isPaid,
+              price: values.isPaid ? Number(values.price) : 0,
+              maxAttendees: values.maxAttendees === '' ? null : Number(values.maxAttendees),
+            }
+
             switch (action) {
               case 'create':
-                await ActivitiesService.create(values, profile.email, profile.name)
+                await ActivitiesService.create(payload, profile.email, profile.name)
                 break
               case 'edit':
-                await ActivitiesService.update(values, id)
+                await ActivitiesService.update(payload, id)
                 break
             }
             router.push('/activities')
@@ -173,7 +203,7 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
           }
         }}
       >
-        {({ isSubmitting, setFieldValue }) => (
+        {({ isSubmitting, setFieldValue, values }) => (
           <Form>
             <FormikTextField name="title" label="Title" variant="outlined" margin="normal" fullWidth />
             <FormikTextField name="description" label="Description" variant="outlined" margin="normal" fullWidth />
@@ -199,6 +229,51 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
                 </Button>
               </Box>
             </Box>
+            {/* Ticketing — a paid activity routes attendees through Razorpay checkout instead of joining directly */}
+            <Box sx={{ mt: 2, p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary" mb={1}>
+                Ticketing
+              </Typography>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={values.isPaid}
+                    onChange={(e) => {
+                      setFieldValue('isPaid', e.target.checked)
+                      // Clear the price when switching back to free so a stale value can't be shown or resubmitted
+                      if (!e.target.checked) setFieldValue('price', '')
+                    }}
+                  />
+                }
+                label={values.isPaid ? 'Paid activity' : 'Free activity'}
+              />
+
+              {values.isPaid && (
+                <FormikTextField
+                  name="price"
+                  label="Price per person"
+                  type="number"
+                  variant="outlined"
+                  margin="normal"
+                  fullWidth
+                  InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
+                  inputProps={{ min: 1, step: '0.01' }}
+                />
+              )}
+
+              <FormikTextField
+                name="maxAttendees"
+                label="Max attendees (optional)"
+                type="number"
+                variant="outlined"
+                margin="normal"
+                fullWidth
+                inputProps={{ min: 1, step: 1 }}
+                helperText="Leave blank for unlimited"
+              />
+            </Box>
+
             <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }} disabled={isSubmitting}>
               Submit
             </Button>
