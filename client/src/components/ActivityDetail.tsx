@@ -1,31 +1,52 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardActions, Typography, Button, Snackbar, Alert, CardMedia } from '@mui/material'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
 import { Activity } from '@/models/activity'
-import { useEffect, useState } from 'react'
 import { ActivitiesService } from '@/api/activities'
-import { useSelector } from 'react-redux'
 import { ActivityRegistration, Attendee } from '@/models'
 import { openRazorpayCheckout, PaymentCancelledError } from '@/utils/razorpay'
+import { useTheme } from './theme/ThemeProvider'
+import Avatar from './ui/Avatar'
+import Button from './ui/Button'
+import Alert from './ui/Alert'
+import Spinner from './ui/Spinner'
+import Toast, { ToastSeverity } from './ui/Toast'
 
 type ActivityDetailProps = {
   activity: Activity
 }
 
+// Small labelled cell used for the venue/city/host/email grid
+function Detail({ label, value, icon }: { label: string; value?: string; icon: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface-2/50 px-4 py-3">
+      <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-faint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+          <path d={icon} />
+        </svg>
+        {label}
+      </dt>
+      <dd className="mt-1 truncate text-sm font-medium text-fg">{value || '—'}</dd>
+    </div>
+  )
+}
+
 export default function ActivityDetail({ activity }: ActivityDetailProps) {
   const router = useRouter()
   const profile = useSelector((state: RootState) => state.profile.profile)
+  const { resolvedTheme } = useTheme()
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info'>('success')
+  const [snackbarSeverity, setSnackbarSeverity] = useState<ToastSeverity>('success')
   const [isClient, setIsClient] = useState(false)
   const [attendees, setAttendees] = useState<Attendee[]>([])
   const [registration, setRegistration] = useState<ActivityRegistration | null>(null)
   const [isJoining, setIsJoining] = useState(false)
 
-  const notify = (message: string, severity: 'success' | 'error' | 'info' = 'success') => {
+  const notify = (message: string, severity: ToastSeverity = 'success') => {
     setSnackbarMessage(message)
     setSnackbarSeverity(severity)
     setSnackbarOpen(true)
@@ -60,9 +81,13 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
 
-  // If we're still on the server, don't render anything to avoid hydration mismatch
+  // If we're still on the server, show the loading state rather than nothing, so the page never jumps from blank to full
   if (!isClient) {
-    return null
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
   }
 
   // Helper function to check if the logged-in user is the host of the activity
@@ -120,7 +145,8 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
             email: profile.email,
             contact: profile.phone,
           },
-          theme: { color: '#1976d2' },
+          // Match the checkout widget to the active theme so it doesn't glare on a dark page
+          theme: { color: resolvedTheme === 'dark' ? '#817aff' : '#4f46e5' },
         })
 
         await ActivitiesService.verifyPayment(payment.razorpay_order_id, payment.razorpay_payment_id, payment.razorpay_signature)
@@ -142,7 +168,7 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     }
   }
 
-  // Handler for Leave button click - calls the API to leave the activity, shows a snackbar message, and refreshes the attendees list
+  // Handler for Leave button click - calls the API to leave the activity, shows a message, and refreshes the attendees list
   const leaveActivity = async () => {
     try {
       await ActivitiesService.removeAttendee(activity.id, String(profile?.id))
@@ -153,129 +179,137 @@ export default function ActivityDetail({ activity }: ActivityDetailProps) {
     }
   }
 
-  // Handler for Delete button click - shows a confirmation dialog, calls the API to delete the activity if confirmed, shows a snackbar message, and navigates back to the activities list
+  // Handler for Delete button click - shows a confirmation dialog, calls the API to delete the activity if confirmed, shows a message, and navigates back to the activities list
   const handleDelete = async (id: string): Promise<void> => {
     const confirmed = confirm('Are you sure you want to delete this activity?')
     if (!confirmed) return
 
     try {
       await ActivitiesService.remove(id)
-      setSnackbarMessage('Activity deleted successfully')
-      setSnackbarSeverity('success')
-      setSnackbarOpen(true)
+      notify('Activity deleted successfully')
 
       setTimeout(() => {
         router.push('/activities')
       }, 1000)
     } catch (error) {
-      setSnackbarMessage(`Failed to delete activity - ${error}`)
-      setSnackbarSeverity('error')
-      setSnackbarOpen(true)
+      notify(`Failed to delete activity - ${error}`, 'error')
     }
   }
 
+  const formattedDate = activity.date
+    ? new Date(activity.date).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : ''
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-6">
-      <Card className="w-full max-w-xl shadow-lg rounded-2xl overflow-hidden">
-        {/* Image */}
-        <CardMedia component="img" height="220" image={activity.imageUrl || '/placeholder-event.jpg'} alt={activity.title} sx={{ objectFit: 'cover' }} />
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <button
+        onClick={() => router.push('/activities')}
+        className="group mb-6 inline-flex animate-fade-in items-center gap-2 text-sm text-muted transition-colors duration-250 hover:text-fg"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform duration-250 ease-smooth group-hover:-translate-x-1">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Back to activities
+      </button>
 
-        {/* Header */}
-        <CardHeader
-          title={
-            <Typography variant="h5" fontWeight={600}>
-              {activity.title}
-            </Typography>
-          }
-          subheader={
-            <Typography variant="subtitle2" color="text.secondary">
-              {activity.city} • {activity.category}
-            </Typography>
-          }
-          action={
-            isUserActivity() && (
-              <div className="space-x-2">
-                <Button variant="outlined" size="small" onClick={() => handleEdit(activity.id)}>
-                  Edit
-                </Button>
-                <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(activity.id)}>
-                  Delete
-                </Button>
+      <article className="animate-fade-up overflow-hidden rounded-3xl border border-line bg-surface shadow-lift">
+        <div className="relative aspect-[16/7] bg-surface-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={activity.imageUrl || 'https://picsum.photos/1200/600'} alt={activity.title} className="h-full w-full object-cover" />
+          {/* Scrim keeps the overlaid title readable whatever the photo looks like */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+          <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-6">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-md">{activity.category}</span>
+                <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-md">{activity.city}</span>
               </div>
-            )
-          }
-        />
+              <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">{activity.title}</h1>
+            </div>
 
-        {/* Content */}
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Typography variant="body2">
-              <strong>Venue:</strong> {activity.venue}
-            </Typography>
-            <Typography variant="body2">
-              <strong>City:</strong> {activity.city}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Host:</strong> {activity.hostName}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Email:</strong> {activity.hostEmail}
-            </Typography>
+            <span className="rounded-full bg-white/95 px-3.5 py-1.5 text-sm font-bold text-gray-900 shadow-soft">
+              {activity.isPaid ? `₹${activity.price}` : 'Free'}
+            </span>
           </div>
+        </div>
 
-          <Typography variant="body1" sx={{ mt: 3 }}>
-            {activity.description}
-          </Typography>
+        <div className="p-6 sm:p-8">
+          {isUserActivity() && (
+            <div className="mb-6 flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => handleEdit(activity.id)}>
+                Edit
+              </Button>
+              <Button variant="secondary" size="sm" className="text-danger hover:border-danger/50 hover:text-danger" onClick={() => handleDelete(activity.id)}>
+                Delete
+              </Button>
+            </div>
+          )}
 
-          <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 rounded-lg">
-            <Typography variant="h6">👥 Attendees: {attendees.length}</Typography>
-            <Typography variant="h6">{activity.isPaid ? `₹${activity.price}` : 'Free'}</Typography>
+          {formattedDate && (
+            <p className="flex items-center gap-2 text-sm font-medium text-brand">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <rect x="3" y="5" width="18" height="16" rx="2.5" />
+                <path d="M8 3v4M16 3v4M3 11h18" />
+              </svg>
+              {formattedDate}
+            </p>
+          )}
+
+          <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Detail label="Venue" value={activity.venue} icon="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z" />
+            <Detail label="City" value={activity.city} icon="M3 21h18M6 21V8l6-4 6 4v13M10 21v-5h4v5" />
+            <Detail label="Host" value={activity.hostName} icon="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+            <Detail label="Email" value={activity.hostEmail} icon="M4 6h16v12H4zM4 7l8 6 8-6" />
+          </dl>
+
+          {activity.description && <p className="mt-6 whitespace-pre-line leading-relaxed text-muted">{activity.description}</p>}
+
+          <div className="mt-6 flex items-center justify-between rounded-2xl border border-line bg-surface-2/50 px-4 py-3">
+            <div className="flex items-center gap-3">
+              {/* Overlapping stack of the first few attendees, with a count for the rest */}
+              <div className="flex -space-x-2">
+                {attendees.slice(0, 4).map((attendee) => (
+                  <Avatar key={attendee.id} name={attendee.name} size="xs" className="ring-2 ring-surface" />
+                ))}
+                {attendees.length === 0 && <span className="text-sm text-faint">Nobody yet</span>}
+              </div>
+              <span className="text-sm text-muted">
+                <span className="font-semibold text-fg">{attendees.length}</span> attending
+                {activity.maxAttendees ? ` · ${activity.maxAttendees} max` : ''}
+              </span>
+            </div>
           </div>
 
           {/* A pending registration means a Razorpay order was created but the payment never completed */}
           {isPaymentPending() && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
+            <Alert severity="warning" className="mt-4">
               Your payment for this activity is still pending. Use the button below to complete it.
             </Alert>
           )}
-        </CardContent>
 
-        {/* Actions */}
-        <CardActions sx={{ gap: 2, px: 2, pb: 2 }}>
-          <Button variant="outlined" fullWidth onClick={() => router.push('/activities')}>
-            ← Back to Activities
-          </Button>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            {!isUserActivity() &&
+              (isAlreadyAttending() ? (
+                <Button variant="danger" fullWidth onClick={leaveActivity} disabled={isJoining}>
+                  Leave Activity
+                </Button>
+              ) : (
+                <Button variant="success" fullWidth loading={isJoining} onClick={joinActivity}>
+                  {isJoining ? 'Processing…' : joinButtonLabel()}
+                </Button>
+              ))}
 
-          {!isUserActivity() &&
-            (isAlreadyAttending() ? (
-              <Button variant="contained" color="error" fullWidth onClick={leaveActivity} disabled={isJoining}>
-                Leave Activity
+            {isUserActivity() && (
+              <Button fullWidth onClick={() => router.push(`/activities/${activity.id}/attendees`)}>
+                View attendees
               </Button>
-            ) : (
-              <Button variant="contained" color="success" fullWidth onClick={joinActivity} disabled={isJoining}>
-                {isJoining ? 'Processing…' : joinButtonLabel()}
-              </Button>
-            ))}
+            )}
+          </div>
+        </div>
+      </article>
 
-          {isUserActivity() && (
-            <>
-              {/* <Button variant="contained" color="secondary" fullWidth onClick={() => dispatch(decrement())}>
-                Cancel Activity
-              </Button> */}
-              <Button variant="contained" color="info" fullWidth onClick={() => router.push(`/activities/${activity.id}/attendees`)}>
-                👥 View Attendees
-              </Button>
-            </>
-          )}
-        </CardActions>
-      </Card>
-
-      {/* Snackbar */}
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
-        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      <Toast open={snackbarOpen} message={snackbarMessage} severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)} />
     </div>
   )
 }

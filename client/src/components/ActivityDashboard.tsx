@@ -1,4 +1,3 @@
-import { Box } from '@mui/material'
 import ActivityList from './ActivityList'
 import Chatbot from './Chatbot'
 import { Activity } from '@/models'
@@ -8,11 +7,10 @@ type Props = {
 }
 
 export default function ActivityDashboard({ activities }: Props) {
-
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh' }}>
+    <div className="min-h-[calc(100vh-4rem)]">
       <ActivityList activities={activities} />
-      {<Chatbot />}
-    </Box>
+      <Chatbot />
+    </div>
   )
 }

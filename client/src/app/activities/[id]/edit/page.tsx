@@ -2,7 +2,7 @@ import ActivityForm from '@/components/ActivityForm'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
-const editActivity = async ({ params }: { params: { id: string } }) => {
+const editActivity = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params
 
   if (!id) return notFound()

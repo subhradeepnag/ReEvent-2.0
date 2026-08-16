@@ -5,8 +5,13 @@ import { useRouter } from 'next/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '@/store'
 import { AccountsService } from '@/api/account'
-import { Avatar, Box, Button, Card, CardContent, Stack, Typography, TextField, IconButton } from '@mui/material'
 import { setProfile } from '@/store/slices/profileSlice'
+import Button from '@/components/ui/Button'
+import { Input } from '@/components/ui/Field'
+import Alert from '@/components/ui/Alert'
+import Avatar from '@/components/ui/Avatar'
+import AvatarPicker from '@/components/ui/AvatarPicker'
+import Spinner from '@/components/ui/Spinner'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -18,8 +23,8 @@ export default function ProfilePage() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [avatar, setAvatar] = useState('')
-  const [avatarPreview, setAvatarPreview] = useState('')
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -31,33 +36,12 @@ export default function ProfilePage() {
       setName(profile.name)
       setPhone(profile.phone)
       setAvatar(profile.avatar || '')
-      setAvatarPreview(profile.avatar || '')
     }
   }, [profile])
 
-  // Handler for avatar image change. It creates a preview of the selected image and resizes it to a maximum of 100x100 pixels before setting it as the new avatar in the component state.
-  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setAvatarPreview(URL.createObjectURL(file))
-
-    const img = new Image()
-    img.src = URL.createObjectURL(file)
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const MAX = 100
-      const ratio = Math.min(MAX / img.width, MAX / img.height)
-      canvas.width = img.width * ratio
-      canvas.height = img.height * ratio
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      setAvatar(canvas.toDataURL('image/jpeg', 0.7))
-    }
-  }
-
   // Handler for saving profile changes. It calls the AccountsService to update the user's profile with the new name, phone, and avatar, updates the Redux store with the updated profile, and exits edit mode. If there's an error during the update process, it sets an error message to be displayed to the user.
   async function handleSave() {
+    setSaving(true)
     try {
       const updated = await AccountsService.updateProfile(token!, { name, phone, avatar })
       dispatch(setProfile(updated))
@@ -66,6 +50,8 @@ export default function ProfilePage() {
     } catch (err) {
       console.error(err)
       setError('Failed to update profile.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -75,78 +61,88 @@ export default function ProfilePage() {
       setName(profile.name)
       setPhone(profile.phone)
       setAvatar(profile.avatar || '')
-      setAvatarPreview(profile.avatar || '')
     }
     setIsEditing(false)
     setError('')
   }
 
-  if (!isClient) return null
+  if (!isClient) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
+  }
 
   if (!profile) {
     return (
-      <Box className="flex justify-center items-center h-screen">
-        <Typography variant="h6">Profile not found.</Typography>
-      </Box>
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+        <p className="animate-fade-in text-muted">Profile not found.</p>
+      </div>
     )
   }
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f7f9fc' }}>
-      <Card sx={{ width: 400, p: 4, boxShadow: 4, textAlign: 'center' }}>
-        <CardContent>
-          {/* Avatar */}
-          <Box sx={{ position: 'relative', width: 100, margin: '0 auto', mb: 2 }}>
-            <Avatar src={avatarPreview || '/default-avatar.png'} sx={{ width: 100, height: 100 }} />
-            {isEditing && (
-              <IconButton
-                component="label"
-                size="small"
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  width: 26,
-                  height: 26,
-                  '&:hover': { backgroundColor: 'primary.dark' },
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 15.2A3.2 3.2 0 1 1 12 8.8a3.2 3.2 0 0 1 0 6.4zm7-11.2h-1.8l-1.4-2H8.2L6.8 4H5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3z" />
-                </svg>
-                <input type="file" accept="image/*" hidden onChange={handleAvatarChange} />
-              </IconButton>
-            )}
-          </Box>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md animate-fade-up overflow-hidden rounded-3xl border border-line bg-surface shadow-lift">
+        {/* Gradient cap that the avatar overlaps, so the header has depth without an image */}
+        <div className="h-24 bg-gradient-to-br from-brand to-accent" />
 
-          {error && <Typography color="error" variant="body2" mb={2}>{error}</Typography>}
+        <div className="-mt-12 flex flex-col items-center px-8 pb-8">
+          {isEditing ? (
+            <AvatarPicker value={avatar} name={name} onChange={setAvatar} />
+          ) : (
+            <Avatar src={profile.avatar} name={profile.name} size="lg" className="ring-4 ring-surface" />
+          )}
+
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-fg">{profile.name}</h1>
+          <p className="text-sm text-muted">{profile.email}</p>
+
+          {error && (
+            <Alert severity="error" className="mt-5 w-full">
+              {error}
+            </Alert>
+          )}
 
           {isEditing ? (
-            <Stack spacing={2}>
-              <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth size="small" />
-              <TextField label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth size="small" />
-              <Stack direction="row" spacing={1}>
-                <Button variant="contained" color="primary" fullWidth onClick={handleSave}>Save</Button>
-                <Button variant="outlined" fullWidth onClick={handleCancel}>Cancel</Button>
-              </Stack>
-            </Stack>
+            <div className="mt-6 flex w-full flex-col gap-4">
+              <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+
+              <div className="mt-2 flex gap-3">
+                <Button fullWidth loading={saving} onClick={handleSave}>
+                  {saving ? 'Saving…' : 'Save'}
+                </Button>
+                <Button variant="secondary" fullWidth onClick={handleCancel} disabled={saving}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
           ) : (
-            <>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>{profile.name}</Typography>
-              <Stack spacing={1} sx={{ my: 2 }}>
-                <Typography variant="body1" color="text.secondary">📧 {profile.email}</Typography>
-                <Typography variant="body1" color="text.secondary">📱 {profile.phone}</Typography>
-              </Stack>
-              <Stack spacing={1}>
-                <Button variant="outlined" fullWidth onClick={() => setIsEditing(true)}>Edit Profile</Button>
-                <Button variant="contained" color="primary" fullWidth onClick={() => router.push('/activities')}>Back to Activities</Button>
-              </Stack>
-            </>
+            <div className="mt-6 flex w-full flex-col gap-4">
+              <dl className="divide-y divide-line rounded-2xl border border-line bg-surface-2/60">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-faint">Email</dt>
+                  <dd className="text-sm text-fg">{profile.email}</dd>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-faint">Phone</dt>
+                  <dd className="text-sm text-fg">{profile.phone}</dd>
+                </div>
+              </dl>
+
+              <div className="flex gap-3">
+                <Button variant="secondary" fullWidth onClick={() => setIsEditing(true)}>
+                  Edit profile
+                </Button>
+                <Button fullWidth onClick={() => router.push('/activities')}>
+                  Activities
+                </Button>
+              </div>
+            </div>
           )}
-        </CardContent>
-      </Card>
-    </Box>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -1,15 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useDispatch } from 'react-redux'
 import { AccountsService } from '@/api/account'
 import { login } from '@/store/slices/authSlice'
 import { AppDispatch } from '@/store'
-import { Box, Button, Card, CardContent, Stack, TextField, Typography, Alert, Divider } from '@mui/material'
 import { setProfile } from '@/store/slices/profileSlice'
 import { signIn, useSession } from 'next-auth/react'
-import Image from 'next/image'
+import Button from '@/components/ui/Button'
+import { Input } from '@/components/ui/Field'
+import Alert from '@/components/ui/Alert'
+import GoogleIcon from '@/components/ui/GoogleIcon'
 
 // Marks that the user started a Google sign-in from this page. Signing in with an
 // OAuth provider navigates the browser away to Google and back, so this flag is how
@@ -23,11 +26,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const exchangingGoogleToken = useRef(false)
 
   // Handler for form submission to log in the user. It calls the AccountsService to authenticate the user, updates the Redux store with the authentication token and user profile, and navigates to the activities page on success. If there's an error during login, it sets an error message to be displayed to the user.
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
+    setSubmitting(true)
     try {
       const data = await AccountsService.login(email, password)
       dispatch(login(data.access_token))
@@ -38,6 +43,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       console.error(err)
       setError('Invalid email or password. Please try again.')
+      setSubmitting(false)
     }
   }
 
@@ -88,49 +94,46 @@ export default function LoginPage() {
   }, [status, session, dispatch, router])
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f7f9fc',
-      }}
-    >
-      <Card sx={{ width: 400, p: 3, boxShadow: 3 }}>
-        <CardContent>
-          <Typography variant="h4" textAlign="center" mb={3}>
-            Login
-          </Typography>
+    <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-4 py-12">
+      <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-brand/15 blur-3xl" />
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+      <div className="w-full max-w-md animate-fade-up rounded-3xl border border-line bg-surface p-8 shadow-lift">
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Welcome back</h1>
+        <p className="mt-1.5 text-sm text-muted">Sign in to keep exploring activities.</p>
 
-          <form onSubmit={handleLogin}>
-            <Stack spacing={2}>
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={handleGoogleLogin}
-                startIcon={<Image src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width={20} height={20} alt="Google" />}
-                sx={{ textTransform: 'none', borderColor: '#dadce0', color: '#3c4043', '&:hover': { borderColor: '#aaa' } }}
-              >
-                Continue with Google
-              </Button>
+        {error && (
+          <Alert severity="error" className="mt-6">
+            {error}
+          </Alert>
+        )}
 
-              <Divider>or</Divider>
-              <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth required />
-              <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth required />
-              <Button type="submit" variant="contained" color="primary" fullWidth>
-                Login
-              </Button>
-            </Stack>
-          </form>
-        </CardContent>
-      </Card>
-    </Box>
+        <Button variant="secondary" fullWidth className="mt-6" onClick={handleGoogleLogin}>
+          <GoogleIcon className="h-5 w-5" />
+          Continue with Google
+        </Button>
+
+        <div className="my-6 flex items-center gap-3">
+          <span className="h-px flex-1 bg-line" />
+          <span className="text-xs uppercase tracking-widest text-faint">or</span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          <Input label="Email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input label="Password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+          <Button type="submit" fullWidth loading={submitting} className="mt-2">
+            {submitting ? 'Signing in…' : 'Login'}
+          </Button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-muted">
+          New here?{' '}
+          <Link href="/signup" className="font-medium text-brand transition-opacity duration-250 hover:opacity-75">
+            Create an account
+          </Link>
+        </p>
+      </div>
+    </div>
   )
 }

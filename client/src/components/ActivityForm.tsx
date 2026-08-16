@@ -1,29 +1,28 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Formik, Form, useField } from 'formik'
-import { TextField, Button, Box, Typography, TextFieldProps, MenuItem, FormControlLabel, Switch, InputAdornment } from '@mui/material'
+import { Formik, Form } from 'formik'
 import { useRouter } from 'next/navigation'
-import { ActivitiesService } from '@/api/activities'
 import { useSelector } from 'react-redux'
+import * as Yup from 'yup'
+import { ActivitiesService } from '@/api/activities'
 import { RootState } from '@/store'
 import { ActivityFormValues } from '@/models'
-import * as Yup from 'yup'
-import FormikSelectField from './common/FormikTextField'
+import { compressImage } from '@/utils/image'
 import indianCities from '../data/indianCities.json'
-
-type FormikTextFieldProps = TextFieldProps & {
-  name: string
-}
+import { FormikInput, FormikSelect, FormikTextarea } from './common/FormikTextField'
+import { Switch } from './ui/Field'
+import Button from './ui/Button'
+import Spinner from './ui/Spinner'
 
 type ActivityFormProps = {
   action: 'create' | 'edit'
   id?: string
 }
 
-const formTitles: Record<string, string> = {
-  create: 'Create Activity',
-  edit: 'Edit Activity',
+const formCopy: Record<string, { title: string; subtitle: string; submit: string }> = {
+  create: { title: 'Create Activity', subtitle: 'Publish a new activity for people to join.', submit: 'Create activity' },
+  edit: { title: 'Edit Activity', subtitle: 'Update the details of your activity.', submit: 'Save changes' },
 }
 
 // Number inputs come back as '' when empty, which Yup would otherwise cast to NaN — treat that as "not provided"
@@ -46,15 +45,23 @@ const validationSchema = Yup.object({
       then: (schema) => schema.typeError('Price must be a number').required('Price is required').moreThan(0, 'Price must be greater than 0'),
       otherwise: (schema) => schema.notRequired(),
     }),
-  maxAttendees: Yup.number().transform(emptyStringToUndefined).typeError('Capacity must be a number').integer('Capacity must be a whole number').min(1, 'Capacity must be at least 1').notRequired(),
+  maxAttendees: Yup.number()
+    .transform(emptyStringToUndefined)
+    .typeError('Capacity must be a number')
+    .integer('Capacity must be a whole number')
+    .min(1, 'Capacity must be at least 1')
+    .notRequired(),
 })
 
-// Custom Formik-connected TextField component that displays validation errors
-const FormikTextField = ({ name, ...props }: FormikTextFieldProps) => {
-  const [field, meta] = useField(name)
-  const isError = meta.touched && Boolean(meta.error)
-
-  return <TextField {...field} {...props} error={isError} helperText={isError ? meta.error : ''} />
+// Grouped block of fields with a heading, so a long form reads as a few short ones
+function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <h2 className="text-sm font-semibold text-fg">{title}</h2>
+      {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
+      <div className="mt-5 flex flex-col gap-4">{children}</div>
+    </section>
+  )
 }
 
 // Main component for creating or editing an activity, with form validation and image upload/preview functionality
@@ -76,33 +83,22 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
   const [loading, setLoading] = useState(action === 'edit')
   const [isClient, setIsClient] = useState(false)
   const profile = useSelector((state: RootState) => state.profile.profile)
-  const [imagePreview, setImagePreview] = useState<string>('')
 
-  // Function to handle image file selection, generate a preview, and compress the image before setting it in the form state
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (field: string, value: string) => void) {
+  const copy = formCopy[action] ?? formCopy.create
+
+  // Function to handle image file selection: compresses the picked image and stores it on the form as a data URL
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (field: string, value: string) => void) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setImagePreview(URL.createObjectURL(file))
-
-    const img = new Image()
-    img.src = URL.createObjectURL(file)
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const MAX = 400
-      const ratio = Math.min(MAX / img.width, MAX / img.height)
-      canvas.width = img.width * ratio
-      canvas.height = img.height * ratio
-
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-
-      const compressed = canvas.toDataURL('image/jpeg', 0.7)
-      setFieldValue('imageUrl', compressed)
+    try {
+      setFieldValue('imageUrl', await compressImage(file, 400))
+    } catch (error) {
+      console.error('Failed to process image', error)
     }
   }
 
-  // Load activity data when editing, and set up the form with initial values and image preview. Also set isClient to true to avoid hydration issues. If creating a new activity, just set isClient to true.
+  // Load activity data when editing, and set up the form with initial values. Also set isClient to true to avoid hydration issues.
   useEffect(() => {
     setIsClient(true)
     if (action === 'edit' && id) {
@@ -122,7 +118,6 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
             price: activity.isPaid ? String(activity.price ?? '') : '',
             maxAttendees: activity.maxAttendees === null || activity.maxAttendees === undefined ? '' : String(activity.maxAttendees),
           })
-          setImagePreview(activity.imageUrl ?? '')
         } catch (err) {
           console.error('Failed to load activity', err)
         } finally {
@@ -134,43 +129,34 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
     }
   }, [action, id])
 
-  // If we're still on the server, don't render anything to avoid hydration mismatch. If user is not logged in, show an unauthorized message. If data is still loading, show a loading message.
-  if (!isClient) {
-    return null
+  // If we're still on the server, or the activity is loading, show a spinner rather than nothing
+  if (!isClient || loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
   }
 
   // If user is not logged in, show an unauthorized message
   if (!profile) {
     return (
-      <Box sx={{ padding: 4, textAlign: 'center' }}>
-        <Typography variant="h6" color="error">
-          Unauthorized — Please sign in to access this page.
-        </Typography>
-      </Box>
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-3 px-4 text-center">
+        <h1 className="text-lg font-semibold text-fg">Unauthorized</h1>
+        <p className="text-sm text-muted">Please sign in to access this page.</p>
+        <Button className="mt-2" onClick={() => router.push('/login')}>
+          Go to login
+        </Button>
+      </div>
     )
   }
 
-  // If data is still loading, show a loading message
-  if (!profile || loading || indianCities.length === 0) {
-    return (
-      <Box sx={{ padding: 4, textAlign: 'center' }}>
-        <Typography>Loading ...</Typography>
-      </Box>
-    )
-  }
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        width: 300,
-        margin: '0 auto',
-        padding: 2,
-      }}
-    >
-      <Typography variant="h5" gutterBottom>
-        {formTitles[action] || 'Activity Form'}
-      </Typography>
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+      <header className="animate-fade-up">
+        <h1 className="text-3xl font-bold tracking-tight text-fg">{copy.title}</h1>
+        <p className="mt-1.5 text-muted">{copy.subtitle}</p>
+      </header>
 
       <Formik
         initialValues={initialValues}
@@ -203,84 +189,96 @@ const ActivityForm = ({ action, id }: ActivityFormProps) => {
           }
         }}
       >
-        {({ isSubmitting, setFieldValue, values }) => (
-          <Form>
-            <FormikTextField name="title" label="Title" variant="outlined" margin="normal" fullWidth />
-            <FormikTextField name="description" label="Description" variant="outlined" margin="normal" fullWidth />
-            <FormikTextField name="category" label="Category" variant="outlined" margin="normal" fullWidth />
-            <FormikTextField name="date" label="Date" variant="outlined" margin="normal" fullWidth type="date" InputLabelProps={{ shrink: true }} />
-            <FormikSelectField name="city" label="City" variant="outlined" margin="normal" fullWidth>
-              {indianCities.map((city) => (
-                <MenuItem key={city.name} value={city.name}>
-                  {city.name}
-                </MenuItem>
-              ))}
-            </FormikSelectField>
-            <FormikTextField name="venue" label="Venue" variant="outlined" margin="normal" fullWidth />
-            <Box sx={{ mt: 1, mb: 1 }}>
-              <Typography variant="body2" color="text.secondary" mb={1}>
-                Activity Image
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {imagePreview && <Box component="img" src={imagePreview} alt="preview" sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, border: '1px solid #ddd' }} />}
-                <Button variant="outlined" component="label" size="small">
-                  {imagePreview ? 'Change Image' : 'Upload Image'}
+        {({ isSubmitting, setFieldValue, values, errors, touched }) => (
+          <Form className="mt-8 flex animate-fade-up flex-col gap-5" style={{ animationDelay: '80ms' }}>
+            <Section title="Details" description="What is happening, and what it is about.">
+              <FormikInput name="title" label="Title" placeholder="Sunday morning trek" />
+              <FormikTextarea name="description" label="Description" placeholder="Tell people what to expect…" rows={4} />
+              <FormikInput name="category" label="Category" placeholder="Outdoors, Music, Tech…" />
+            </Section>
+
+            <Section title="When & where" description="Attendees see this on the activity card.">
+              <FormikInput name="date" label="Date" type="date" />
+              <FormikSelect name="city" label="City">
+                <option value="">Select a city</option>
+                {indianCities.map((city) => (
+                  <option key={city.name} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </FormikSelect>
+              <FormikInput name="venue" label="Venue" placeholder="Cubbon Park, Gate 3" />
+            </Section>
+
+            <Section title="Cover image" description="Shown on the activity card and detail page.">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-line bg-surface-2">
+                  {values.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={values.imageUrl} alt="Cover preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-faint">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                        <rect x="3" y="4" width="18" height="16" rx="2.5" />
+                        <circle cx="9" cy="10" r="2" />
+                        <path d="m4 18 5-4 3.5 3 3-2.5L20 18" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+
+                <label className="cursor-pointer">
+                  <span className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3 text-sm font-medium text-fg transition-all duration-250 ease-smooth hover:border-brand/50 hover:text-brand active:scale-[0.97]">
+                    {values.imageUrl ? 'Change image' : 'Upload image'}
+                  </span>
                   <input type="file" accept="image/*" hidden onChange={(e) => handleImageChange(e, setFieldValue)} />
-                </Button>
-              </Box>
-            </Box>
+                </label>
+              </div>
+
+              {touched.imageUrl && errors.imageUrl && <p className="text-xs text-danger">{errors.imageUrl}</p>}
+            </Section>
+
             {/* Ticketing — a paid activity routes attendees through Razorpay checkout instead of joining directly */}
-            <Box sx={{ mt: 2, p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary" mb={1}>
-                Ticketing
-              </Typography>
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={values.isPaid}
-                    onChange={(e) => {
-                      setFieldValue('isPaid', e.target.checked)
-                      // Clear the price when switching back to free so a stale value can't be shown or resubmitted
-                      if (!e.target.checked) setFieldValue('price', '')
-                    }}
-                  />
-                }
+            <Section title="Ticketing" description="Free activities let people join in one tap.">
+              <Switch
+                checked={values.isPaid}
+                onChange={(checked) => {
+                  setFieldValue('isPaid', checked)
+                  // Clear the price when switching back to free so a stale value can't be shown or resubmitted
+                  if (!checked) setFieldValue('price', '')
+                }}
                 label={values.isPaid ? 'Paid activity' : 'Free activity'}
+                description={values.isPaid ? 'Attendees pay before their spot is confirmed.' : 'Anyone can join without paying.'}
               />
 
-              {values.isPaid && (
-                <FormikTextField
-                  name="price"
-                  label="Price per person"
-                  type="number"
-                  variant="outlined"
-                  margin="normal"
-                  fullWidth
-                  InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
-                  inputProps={{ min: 1, step: '0.01' }}
-                />
-              )}
+              {/* Price slides in with the toggle instead of appearing abruptly */}
+              <div
+                className={
+                  values.isPaid
+                    ? 'grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity] duration-400 ease-smooth'
+                    : 'grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-400 ease-smooth'
+                }
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <FormikInput name="price" label="Price per person" type="number" min={1} step="0.01" adornment={<span className="text-sm">₹</span>} />
+                </div>
+              </div>
 
-              <FormikTextField
-                name="maxAttendees"
-                label="Max attendees (optional)"
-                type="number"
-                variant="outlined"
-                margin="normal"
-                fullWidth
-                inputProps={{ min: 1, step: 1 }}
-                helperText="Leave blank for unlimited"
-              />
-            </Box>
+              <FormikInput name="maxAttendees" label="Max attendees (optional)" type="number" min={1} step={1} hint="Leave blank for unlimited" />
+            </Section>
 
-            <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }} disabled={isSubmitting}>
-              Submit
-            </Button>
+            <div className="flex gap-3">
+              <Button type="button" variant="secondary" fullWidth onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <Button type="submit" fullWidth loading={isSubmitting}>
+                {isSubmitting ? 'Saving…' : copy.submit}
+              </Button>
+            </div>
           </Form>
         )}
       </Formik>
-    </Box>
+    </div>
   )
 }
 

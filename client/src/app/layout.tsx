@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter'
 import Navbar from '@/components/Navbar'
 import StoreProvider from '@/store/provider'
 import Providers from './providers'
+import ThemeProvider, { themeInitScript } from '@/components/theme/ThemeProvider'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -28,16 +28,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <StoreProvider>
-            <AppRouterCacheProvider>
-              <Navbar />
-              {children}
-            </AppRouterCacheProvider>
-          </StoreProvider>
-        </Providers>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Applies the stored theme before first paint so a dark-mode user never sees a white flash */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        <ThemeProvider>
+          <Providers>
+            <StoreProvider>
+              <div className="flex min-h-screen flex-col">
+                <Navbar />
+                <main className="flex-1">{children}</main>
+              </div>
+            </StoreProvider>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   )
